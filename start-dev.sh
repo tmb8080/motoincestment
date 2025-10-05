@@ -53,8 +53,8 @@ fi
 
 # Start both services
 echo -e "${GREEN}🚀 Starting development servers...${NC}"
-echo -e "${BLUE}Backend will run on: http://localhost:3000${NC}"
-echo -e "${BLUE}Frontend will run on: http://localhost:5000${NC}"
+echo -e "${BLUE}Backend will run on: https://motoincestment.vercel.app${NC}"
+echo -e "${BLUE}Frontend will run on: https://umuhuza.store${NC}"
 
 # Start backend in background
 cd ../backend
