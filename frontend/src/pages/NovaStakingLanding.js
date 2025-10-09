@@ -174,7 +174,7 @@ const MotoInvestmentLanding = () => {
   ];
 
   const roadmapData = [
-    { quarter: 'Q1 2025', title: 'Platform Launch & Community Building', items: ['Launch Moto Imvestment Platform', 'Build initial community', 'Establish partnerships'] },
+    { quarter: 'Q1 2025', title: 'Platform Launch & Community Building', items: ['Launch Moto Investment Platform', 'Build initial community', 'Establish partnerships'] },
     { quarter: 'Q2 2025', title: 'Partnerships & User Education', items: ['Strategic partnerships', 'Referral campaigns', 'Educational content'] },
     { quarter: 'Q3 2025', title: 'Mobile App & Global Expansion', items: ['Mobile application', 'Multi-language support', 'Third-party security audits'] },
     { quarter: 'Q4 2025', title: 'Token Integration & Global Reach', items: ['Nova Token integration', 'Exchange listings', 'Global partnerships'] }
@@ -195,7 +195,7 @@ const MotoInvestmentLanding = () => {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
               <Logo className="h-12 w-auto" />
-              <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Moto Imvestment</h1>
+              <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Moto Investment</h1>
             </div>
             
             {/* Desktop Navigation */}
@@ -307,7 +307,7 @@ const MotoInvestmentLanding = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="mb-8">
             <h1 className={`text-5xl md:text-7xl font-bold mb-6 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>
-              Moto Imvestment
+              Moto Investment
             </h1>
             <p className={`text-xl md:text-2xl mb-8 max-w-4xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-yellow' : 'text-primary-600'}`}>
               The Next-Generation Staking Platform Launching September 2025
@@ -373,7 +373,7 @@ const MotoInvestmentLanding = () => {
       <section ref={solutionRef} className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className={`text-4xl font-bold mb-6 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Our Solution: Moto Imvestment</h2>
+            <h2 className={`text-4xl font-bold mb-6 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Our Solution: Moto Investment</h2>
             <p className={`text-xl max-w-3xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
               A transparent and easy-to-use platform where investors can start with $10, 
               earn up to 13% daily, withdraw anytime, and earn through a 3-level referral program.
@@ -462,7 +462,7 @@ const MotoInvestmentLanding = () => {
           <div className="text-center mb-16">
             <h2 className={`text-4xl font-bold mb-6 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Referral Program</h2>
             <p className={`text-xl max-w-3xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
-              Moto Imvestment rewards you for growing our community with a 3-level referral system
+              Moto Investment rewards you for growing our community with a 3-level referral system
             </p>
           </div>
           
@@ -522,7 +522,7 @@ const MotoInvestmentLanding = () => {
           <div className="text-center mb-16">
             <h2 className={`text-4xl font-bold mb-6 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Technology & Security</h2>
             <p className={`text-xl max-w-3xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
-              Moto Imvestment ensures the highest standards of security and transparency
+              Moto Investment ensures the highest standards of security and transparency
             </p>
           </div>
           
@@ -667,13 +667,13 @@ const MotoInvestmentLanding = () => {
             The Future of Accessible Crypto Investments
           </h2>
           <p className={`text-xl mb-8 transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
-            Moto Imvestment is the future of accessible, transparent, and profitable crypto investments. 
+            Moto Investment is the future of accessible, transparent, and profitable crypto investments. 
             With daily returns, flexible withdrawal, and community-driven growth, investors can build wealth with confidence.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register">
               <Button variant="success" className="px-8 py-4 text-lg font-bold transform hover:scale-105 transition-all duration-300">
-                Join Moto Imvestment Today
+                Join Moto Investment Today
               </Button>
             </Link>
             <Link to="/login">
@@ -692,7 +692,7 @@ const MotoInvestmentLanding = () => {
             <div>
               <div className="flex items-center space-x-3 mb-4">
                 <Logo className="h-8 w-auto" />
-                <h3 className={`text-xl font-bold transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Moto Imvestment</h3>
+                <h3 className={`text-xl font-bold transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Moto Investment</h3>
               </div>
               <p className={`transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
                 The next-generation staking platform for financial freedom.
@@ -731,7 +731,7 @@ const MotoInvestmentLanding = () => {
           </div>
           
           <div className={`border-t mt-8 pt-8 text-center transition-colors duration-300 ${isDark ? 'border-binance-dark-border text-binance-text-secondary' : 'border-gray-200 text-gray-600'}`}>
-            <p>&copy; 2025 Moto Imvestment. All rights reserved. Launching September 2025.</p>
+            <p>&copy; 2025 Moto Investment. All rights reserved. Launching September 2025.</p>
           </div>
         </div>
       </footer>

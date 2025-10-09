@@ -10,8 +10,8 @@ const HelpButton = () => {
     <button
       onClick={handleHelpClick}
       className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 bg-accent-500 hover:bg-accent-600 text-white rounded-full p-3 shadow-lg dark:shadow-dark-medium transition-all duration-200 hover:scale-110 hover:shadow-xl"
-      title="Contact Moto Imvestment on Telegram"
-      aria-label="Contact Moto Imvestment on Telegram"
+      title="Contact Moto Investment on Telegram"
+      aria-label="Contact Moto Investment on Telegram"
     >
       {/* Telegram Icon */}
       <svg
