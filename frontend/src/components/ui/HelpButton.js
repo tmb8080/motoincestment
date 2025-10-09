@@ -3,7 +3,7 @@ import React from 'react';
 const HelpButton = () => {
   const handleHelpClick = () => {
     // Open Telegram link in a new tab
-    window.open('https://t.me/Moto Investment', '_blank');
+    window.open('https://t.me/Trinitycustomercare', '_blank');
   };
 
   return (

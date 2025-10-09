@@ -310,7 +310,7 @@ const MotoInvestmentLanding = () => {
               Moto Investment
             </h1>
             <p className={`text-xl md:text-2xl mb-8 max-w-4xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-yellow' : 'text-primary-600'}`}>
-              The Next-Generation Staking Platform Launching September 2025
+              The Next-Generation Staking Platform Launching October  2025
             </p>
             <p className={`text-lg mb-12 max-w-3xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
               Empower your investments with daily earnings and financial freedom. 
@@ -722,7 +722,7 @@ const MotoInvestmentLanding = () => {
             <div>
               <h4 className={`font-bold mb-4 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Community</h4>
               <ul className={`space-y-2 transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
-                <li><a href="https://t.me/Moto Investment" target="_blank" rel="noopener noreferrer" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Telegram</a></li>
+                <li><a href="https://t.me/Trinitycustomercare" target="_blank" rel="noopener noreferrer" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Telegram</a></li>
                 <li><a href="#" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Twitter</a></li>
                 <li><a href="#" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Discord</a></li>
                 <li><a href="#" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Medium</a></li>
@@ -731,7 +731,7 @@ const MotoInvestmentLanding = () => {
           </div>
           
           <div className={`border-t mt-8 pt-8 text-center transition-colors duration-300 ${isDark ? 'border-binance-dark-border text-binance-text-secondary' : 'border-gray-200 text-gray-600'}`}>
-            <p>&copy; 2025 Moto Investment. All rights reserved. Launching September 2025.</p>
+            <p>&copy; 2025 Moto Investment. All rights reserved. Launching October  2025.</p>
           </div>
         </div>
       </footer>
