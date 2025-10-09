@@ -12,9 +12,30 @@ const {
   processVerifiedWithdrawal,
   getWithdrawalStats 
 } = require('../services/withdrawalVerificationService');
+const { body: vbody, validationResult: vResult } = require('express-validator');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Public withdrawal config (min amounts, networks)
+router.get('/config', async (req, res) => {
+  try {
+    const settings = await prisma.adminSettings.findFirst();
+    const minWithdrawalAmount = parseFloat(settings?.minWithdrawalAmount || 2);
+    const minUsdcWithdrawalAmount = parseFloat(settings?.minUsdcWithdrawalAmount || settings?.minWithdrawalAmount || 2);
+
+    res.json({
+      success: true,
+      data: {
+        minWithdrawalAmount,
+        minUsdcWithdrawalAmount,
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching withdrawal config:', error);
+    res.status(500).json({ error: 'Failed to fetch withdrawal config', message: error.message });
+  }
+});
 
 // Request withdrawal
 router.post('/request', [
@@ -70,15 +91,55 @@ router.post('/request', [
       });
     }
 
-    // Check user's wallet balance
+    // Check user's wallet balance - only allow withdrawals from earnings and bonuses
     const wallet = await prisma.wallet.findUnique({
       where: { userId }
     });
 
-    if (!wallet || parseFloat(wallet.balance) < parseFloat(amount)) {
+    if (!wallet) {
       return res.status(400).json({
-        error: 'Insufficient balance',
-        message: 'You do not have enough balance for this withdrawal'
+        error: 'Wallet not found',
+        message: 'Please contact support'
+      });
+    }
+
+    // Calculate withdrawable balance (earnings + bonuses, excluding deposits)
+    // Use the same calculation logic as getWalletStats
+    const dailyTaskEarnings = await prisma.transaction.aggregate({
+      where: {
+        userId,
+        type: 'VIP_EARNINGS'
+      },
+      _sum: { amount: true }
+    });
+
+    const referralBonuses = await prisma.transaction.aggregate({
+      where: {
+        userId,
+        type: 'REFERRAL_BONUS'
+      },
+      _sum: { amount: true }
+    });
+
+    console.log('Backend withdrawal validation - calculated earnings:', {
+      dailyTaskEarnings: dailyTaskEarnings._sum.amount,
+      referralBonuses: referralBonuses._sum.amount,
+      walletTotalEarnings: wallet.totalEarnings,
+      walletTotalReferralBonus: wallet.totalReferralBonus,
+      walletDailyEarnings: wallet.dailyEarnings
+    });
+    
+    const withdrawableBalance = parseFloat(dailyTaskEarnings._sum.amount || 0) + 
+                               parseFloat(referralBonuses._sum.amount || 0);
+
+    console.log('Backend calculated withdrawable balance:', withdrawableBalance);
+    console.log('Requested amount:', parseFloat(amount));
+
+    if (withdrawableBalance < parseFloat(amount)) {
+      console.log('Insufficient withdrawable balance error triggered');
+      return res.status(400).json({
+        error: 'Insufficient withdrawable balance',
+        message: `You can only withdraw from earnings and bonuses. Available: ${withdrawableBalance.toFixed(2)}, Requested: ${amount}. Deposited amounts can only be used for VIP purchases.`
       });
     }
 
@@ -97,11 +158,34 @@ router.post('/request', [
       });
     }
 
+    // Calculate fee based on admin settings
+    // Try tiered fee first
+    let computedFee = 0;
+    const amountFloat = parseFloat(amount);
+    const activeTiers = await prisma.withdrawalFeeTier.findMany({
+      where: { isActive: true },
+      orderBy: { minAmount: 'asc' }
+    });
+    const matched = activeTiers.find(t => {
+      const minA = parseFloat(t.minAmount);
+      const maxA = t.maxAmount != null ? parseFloat(t.maxAmount) : Infinity;
+      return amountFloat >= minA && amountFloat <= maxA;
+    });
+    if (matched) {
+      computedFee = amountFloat * parseFloat(matched.percent);
+    } else {
+      // Fallback to global
+      const feeFixed = parseFloat(settings.withdrawalFeeFixed || 0);
+      const feePercent = parseFloat(settings.withdrawalFeePercent || 0);
+      computedFee = amountFloat * feePercent + feeFixed;
+    }
+
     // Create withdrawal request
     const withdrawal = await prisma.withdrawal.create({
       data: {
         userId,
         amount: parseFloat(amount),
+        feeAmount: parseFloat(computedFee.toFixed(8)),
         currency,
         network: network || null,
         walletAddress,
@@ -116,7 +200,8 @@ router.post('/request', [
         template: 'withdrawalRequest',
         data: {
           fullName: req.user.fullName,
-          amount: amount,
+        amount: amount,
+        fee: computedFee,
           currency: currency,
           walletAddress: walletAddress,
           requestId: withdrawal.id
@@ -462,3 +547,36 @@ router.get('/stats', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+// Fee preview endpoint for frontend
+router.post('/preview-fee', [
+  vbody('amount').isFloat({ min: 0.01 }),
+], authenticateToken, async (req, res) => {
+  try {
+    const errors = vResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+    }
+    const { amount } = req.body;
+    const amountFloat = parseFloat(amount);
+    const settings = await prisma.adminSettings.findFirst();
+    const activeTiers = await prisma.withdrawalFeeTier.findMany({ where: { isActive: true }, orderBy: { minAmount: 'asc' } });
+    let fee = 0;
+    const matched = activeTiers.find(t => {
+      const minA = parseFloat(t.minAmount);
+      const maxA = t.maxAmount != null ? parseFloat(t.maxAmount) : Infinity;
+      return amountFloat >= minA && amountFloat <= maxA;
+    });
+    if (matched) {
+      fee = amountFloat * parseFloat(matched.percent);
+    } else {
+      const feeFixed = parseFloat(settings?.withdrawalFeeFixed || 0);
+      const feePercent = parseFloat(settings?.withdrawalFeePercent || 0);
+      fee = amountFloat * feePercent + feeFixed;
+    }
+    const net = amountFloat - fee;
+    res.json({ success: true, data: { amount: amountFloat, fee: parseFloat(fee.toFixed(8)), net: parseFloat(net.toFixed(8)) } });
+  } catch (error) {
+    console.error('Error previewing fee:', error);
+    res.status(500).json({ error: 'Failed to preview fee', message: error.message });
+  }
+});

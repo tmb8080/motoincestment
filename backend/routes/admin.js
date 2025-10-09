@@ -308,24 +308,31 @@ router.patch('/withdrawals/:id/process', [
         data: updateData
       });
 
-      // If approved, deduct from user's wallet
+      // If approved, deduct only withdrawal amount from user's wallet (fees paid by system)
       if (action === 'APPROVE') {
+        const feeAmount = parseFloat(withdrawal.feeAmount || 0);
+        const currentBalance = parseFloat((await tx.wallet.findUnique({ where: { userId: withdrawal.userId } })).balance);
+        
+        // Only deduct withdrawal amount, ensure balance never goes negative
+        let newBalance = 0;
+        if (currentBalance >= parseFloat(withdrawal.amount)) {
+          newBalance = currentBalance - parseFloat(withdrawal.amount);
+        }
+        
         await tx.wallet.update({
           where: { userId: withdrawal.userId },
           data: {
-            balance: {
-              decrement: withdrawal.amount
-            }
+            balance: newBalance
           }
         });
 
-        // Create transaction record
+        // Create transaction record (only withdrawal amount, fees paid by system)
         await tx.transaction.create({
           data: {
             userId: withdrawal.userId,
             type: 'WITHDRAWAL',
-            amount: withdrawal.amount,
-            description: `Withdrawal processed: ${withdrawal.currency} via ${withdrawal.network}`,
+            amount: parseFloat(withdrawal.amount), // Only withdrawal amount, not + fee
+            description: `Withdrawal processed: ${withdrawal.currency} via ${withdrawal.network} (fee ${feeAmount} paid by system)`,
             referenceId: withdrawal.id,
             metadata: {
               withdrawalId: withdrawal.id,
@@ -700,6 +707,206 @@ router.get('/settings', async (req, res) => {
   }
 });
 
+// Withdrawal Fee Tiers - Admin CRUD
+router.get('/withdrawal-fee-tiers', async (req, res) => {
+  try {
+    let tiers;
+    if (prisma.withdrawalFeeTier) {
+      tiers = await prisma.withdrawalFeeTier.findMany({ orderBy: { minAmount: 'asc' } });
+    } else {
+      // Fallback to raw query if delegate is unavailable
+      tiers = await prisma.$queryRawUnsafe('SELECT * FROM "withdrawal_fee_tiers" ORDER BY "minAmount" ASC');
+    }
+    res.json({ success: true, data: tiers });
+  } catch (error) {
+    console.error('Error fetching fee tiers:', error);
+    res.status(500).json({ error: 'Failed to fetch fee tiers', message: error.message });
+  }
+});
+
+router.post('/withdrawal-fee-tiers', [
+  body('minAmount').isFloat({ min: 0 }).withMessage('minAmount must be >= 0'),
+  body('maxAmount').optional().isFloat({ min: 0 }).withMessage('maxAmount must be >= 0'),
+  body('percent').isFloat({ min: 0, max: 1 }).withMessage('percent must be 0..1'),
+  body('isActive').optional().isBoolean()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+    }
+
+    // Overlap validation
+    const minAmount = parseFloat(req.body.minAmount);
+    const maxAmount = req.body.maxAmount != null ? parseFloat(req.body.maxAmount) : null;
+    if (maxAmount != null && maxAmount < minAmount) {
+      return res.status(400).json({ error: 'Validation failed', message: 'maxAmount must be >= minAmount' });
+    }
+    const existing = prisma.withdrawalFeeTier
+      ? await prisma.withdrawalFeeTier.findMany({ where: { isActive: true } })
+      : await prisma.$queryRawUnsafe('SELECT * FROM "withdrawal_fee_tiers" WHERE "isActive" = true');
+    const overlaps = existing.some(t => {
+      const tMin = parseFloat(t.minAmount);
+      const tMax = t.maxAmount != null ? parseFloat(t.maxAmount) : Infinity;
+      const newMin = minAmount;
+      const newMax = maxAmount != null ? maxAmount : Infinity;
+      return !(newMax < tMin || newMin > tMax);
+    });
+    if (overlaps) {
+      return res.status(400).json({ error: 'Validation failed', message: 'Tier range overlaps with an existing active tier' });
+    }
+
+    let tier;
+    if (prisma.withdrawalFeeTier) {
+      tier = await prisma.withdrawalFeeTier.create({
+        data: {
+          minAmount: minAmount.toString(),
+          maxAmount: maxAmount != null ? maxAmount.toString() : null,
+          percent: req.body.percent.toString(),
+          isActive: req.body.isActive != null ? req.body.isActive : true
+        }
+      });
+    } else {
+      const rows = await prisma.$queryRawUnsafe(
+        'INSERT INTO "withdrawal_fee_tiers" ("minAmount","maxAmount","percent","isActive") VALUES ($1,$2,$3,$4) RETURNING *',
+        minAmount.toString(),
+        maxAmount != null ? maxAmount.toString() : null,
+        req.body.percent.toString(),
+        req.body.isActive != null ? !!req.body.isActive : true
+      );
+      tier = Array.isArray(rows) ? rows[0] : rows;
+    }
+
+    res.json({ success: true, message: 'Fee tier created', data: tier });
+  } catch (error) {
+    console.error('Error creating fee tier:', error);
+    res.status(500).json({ error: 'Failed to create fee tier', message: error.message });
+  }
+});
+
+router.put('/withdrawal-fee-tiers/:id', [
+  body('minAmount').optional().isFloat({ min: 0 }),
+  body('maxAmount').optional({ nullable: true }).isFloat({ min: 0 }),
+  body('percent').optional().isFloat({ min: 0, max: 1 }),
+  body('isActive').optional().isBoolean()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+    }
+
+    const { id } = req.params;
+    const data = {};
+    if (req.body.minAmount != null) data.minAmount = req.body.minAmount.toString();
+    if (req.body.maxAmount !== undefined) data.maxAmount = req.body.maxAmount != null ? req.body.maxAmount.toString() : null;
+    if (req.body.percent != null) data.percent = req.body.percent.toString();
+    if (req.body.isActive != null) data.isActive = req.body.isActive;
+
+    // Overlap validation against others
+    const current = prisma.withdrawalFeeTier
+      ? await prisma.withdrawalFeeTier.findUnique({ where: { id } })
+      : (await prisma.$queryRawUnsafe('SELECT * FROM "withdrawal_fee_tiers" WHERE id = $1 LIMIT 1', id))[0];
+    if (!current) {
+      return res.status(404).json({ error: 'Fee tier not found' });
+    }
+    const newMin = data.minAmount != null ? parseFloat(data.minAmount) : parseFloat(current.minAmount);
+    const newMax = data.maxAmount !== undefined ? (data.maxAmount != null ? parseFloat(data.maxAmount) : null) : (current.maxAmount != null ? parseFloat(current.maxAmount) : null);
+    if (newMax != null && newMax < newMin) {
+      return res.status(400).json({ error: 'Validation failed', message: 'maxAmount must be >= minAmount' });
+    }
+    const others = prisma.withdrawalFeeTier
+      ? await prisma.withdrawalFeeTier.findMany({ where: { id: { not: id }, isActive: true } })
+      : await prisma.$queryRawUnsafe('SELECT * FROM "withdrawal_fee_tiers" WHERE id <> $1 AND "isActive" = true', id);
+    const overlaps = others.some(t => {
+      const tMin = parseFloat(t.minAmount);
+      const tMax = t.maxAmount != null ? parseFloat(t.maxAmount) : Infinity;
+      const thisMax = newMax != null ? newMax : Infinity;
+      return !(thisMax < tMin || newMin > tMax);
+    });
+    if (overlaps) {
+      return res.status(400).json({ error: 'Validation failed', message: 'Updated tier overlaps with an existing active tier' });
+    }
+
+    let tier;
+    if (prisma.withdrawalFeeTier) {
+      tier = await prisma.withdrawalFeeTier.update({ where: { id }, data });
+    } else {
+      // Build dynamic update
+      const fields = [];
+      const values = [];
+      let idx = 1;
+      if (data.minAmount !== undefined) { fields.push(`"minAmount" = $${idx++}`); values.push(data.minAmount); }
+      if (data.maxAmount !== undefined) { fields.push(`"maxAmount" = $${idx++}`); values.push(data.maxAmount); }
+      if (data.percent !== undefined) { fields.push(`"percent" = $${idx++}`); values.push(data.percent); }
+      if (data.isActive !== undefined) { fields.push(`"isActive" = $${idx++}`); values.push(data.isActive); }
+      values.push(id);
+      const sql = `UPDATE "withdrawal_fee_tiers" SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
+      const rows = await prisma.$queryRawUnsafe(sql, ...values);
+      tier = Array.isArray(rows) ? rows[0] : rows;
+    }
+    res.json({ success: true, message: 'Fee tier updated', data: tier });
+  } catch (error) {
+    console.error('Error updating fee tier:', error);
+    res.status(500).json({ error: 'Failed to update fee tier', message: error.message });
+  }
+});
+
+router.delete('/withdrawal-fee-tiers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (prisma.withdrawalFeeTier) {
+      await prisma.withdrawalFeeTier.delete({ where: { id } });
+    } else {
+      await prisma.$executeRawUnsafe('DELETE FROM "withdrawal_fee_tiers" WHERE id = $1', id);
+    }
+    res.json({ success: true, message: 'Fee tier deleted' });
+  } catch (error) {
+    console.error('Error deleting fee tier:', error);
+    res.status(500).json({ error: 'Failed to delete fee tier', message: error.message });
+  }
+});
+
+// Validate tiers coverage and overlaps (diagnostic)
+router.get('/withdrawal-fee-tiers/validate', async (req, res) => {
+  try {
+    const tiers = prisma.withdrawalFeeTier
+      ? await prisma.withdrawalFeeTier.findMany({ where: { isActive: true } })
+      : await prisma.$queryRawUnsafe('SELECT * FROM "withdrawal_fee_tiers" WHERE "isActive" = true');
+    const mapped = tiers.map(t => ({
+      id: t.id,
+      min: parseFloat(t.minAmount),
+      max: t.maxAmount != null ? parseFloat(t.maxAmount) : Infinity,
+      percent: parseFloat(t.percent)
+    })).sort((a,b) => a.min - b.min);
+
+    // Detect overlaps
+    const overlaps = [];
+    for (let i = 1; i < mapped.length; i++) {
+      if (mapped[i].min <= mapped[i-1].max) {
+        overlaps.push({ a: mapped[i-1].id, b: mapped[i].id });
+      }
+    }
+
+    // Detect gaps from 0 upward
+    const gaps = [];
+    let cursor = 0;
+    for (const t of mapped) {
+      if (t.min > cursor) {
+        gaps.push({ from: cursor, to: t.min });
+      }
+      cursor = Math.max(cursor, t.max);
+      if (!isFinite(cursor)) break;
+    }
+    const coveredToInfinity = mapped.length > 0 && !isFinite(mapped[mapped.length - 1].max);
+
+    res.json({ success: true, data: { overlaps, gaps, coveredToInfinity } });
+  } catch (error) {
+    console.error('Error validating fee tiers:', error);
+    res.status(500).json({ error: 'Failed to validate fee tiers', message: error.message });
+  }
+});
+
 // Update admin settings (PUT method)
 router.put('/settings', [
   body('dailyGrowthRate').optional().isFloat({ min: 0, max: 1 }).withMessage('Daily growth rate must be between 0 and 1'),
@@ -708,6 +915,8 @@ router.put('/settings', [
   body('referralBonusLevel3Rate').optional().isFloat({ min: 0, max: 1 }).withMessage('Level 3 rate must be between 0 and 1'),
   body('minDepositAmount').optional().isFloat({ min: 0 }).withMessage('Minimum deposit amount must be positive'),
   body('minWithdrawalAmount').optional().isFloat({ min: 0 }).withMessage('Minimum withdrawal amount must be positive'),
+  body('withdrawalFeeFixed').optional().isFloat({ min: 0 }).withMessage('Withdrawal fixed fee must be positive'),
+  body('withdrawalFeePercent').optional().isFloat({ min: 0, max: 1 }).withMessage('Withdrawal fee percent must be between 0 and 1'),
   body('isDepositEnabled').optional().isBoolean().withMessage('Deposit enabled must be boolean'),
   body('isWithdrawalEnabled').optional().isBoolean().withMessage('Withdrawal enabled must be boolean'),
   body('isRegistrationEnabled').optional().isBoolean().withMessage('Registration enabled must be boolean'),
@@ -747,6 +956,8 @@ router.patch('/settings', [
   body('referralBonusLevel3Rate').optional().isFloat({ min: 0, max: 1 }).withMessage('Level 3 rate must be between 0 and 1'),
   body('minDepositAmount').optional().isFloat({ min: 0 }).withMessage('Minimum deposit amount must be positive'),
   body('minWithdrawalAmount').optional().isFloat({ min: 0 }).withMessage('Minimum withdrawal amount must be positive'),
+  body('withdrawalFeeFixed').optional().isFloat({ min: 0 }).withMessage('Withdrawal fixed fee must be positive'),
+  body('withdrawalFeePercent').optional().isFloat({ min: 0, max: 1 }).withMessage('Withdrawal fee percent must be between 0 and 1'),
   body('isDepositEnabled').optional().isBoolean().withMessage('Deposit enabled must be boolean'),
   body('isWithdrawalEnabled').optional().isBoolean().withMessage('Withdrawal enabled must be boolean'),
   body('isRegistrationEnabled').optional().isBoolean().withMessage('Registration enabled must be boolean'),

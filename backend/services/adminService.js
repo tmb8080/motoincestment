@@ -17,6 +17,8 @@ const initializeAdminSettings = async () => {
           minUsdtDepositAmount: parseFloat(process.env.MIN_USDT_DEPOSIT_AMOUNT) || 30,
           minWithdrawalAmount: parseFloat(process.env.MIN_WITHDRAWAL_AMOUNT) || 10,
           minUsdcWithdrawalAmount: parseFloat(process.env.MIN_USDC_WITHDRAWAL_AMOUNT) || 20,
+          withdrawalFeeFixed: parseFloat(process.env.WITHDRAWAL_FEE_FIXED || '0') || 0,
+          withdrawalFeePercent: parseFloat(process.env.WITHDRAWAL_FEE_PERCENT || '0') || 0,
           isDepositEnabled: true,
           isWithdrawalEnabled: true,
           isRegistrationEnabled: true,

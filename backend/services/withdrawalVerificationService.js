@@ -52,15 +52,16 @@ const verifyWithdrawalRequest = async (withdrawalId) => {
       };
     }
 
-    // Check user's wallet balance
+    // Check user's wallet balance (amount + fee)
     const wallet = await prisma.wallet.findUnique({
       where: { userId: withdrawal.userId }
     });
 
-    if (!wallet || parseFloat(wallet.balance) < parseFloat(withdrawal.amount)) {
+    const totalDebit = parseFloat(withdrawal.amount) + parseFloat(withdrawal.feeAmount || 0);
+    if (!wallet || parseFloat(wallet.balance) < totalDebit) {
       return {
         verified: false,
-        message: 'Insufficient balance for withdrawal'
+        message: 'Insufficient balance for withdrawal including fees'
       };
     }
 
@@ -564,14 +565,86 @@ const processVerifiedWithdrawal = async (withdrawalId, adminId, transactionHash 
         data: updateData
       });
 
-      // Deduct from user's wallet balance
-      await updateWalletBalance(
-        withdrawal.userId,
-        -parseFloat(withdrawal.amount), // Negative amount for withdrawal
-        'WITHDRAWAL',
-        `Withdrawal processed - ${withdrawal.amount} ${withdrawal.currency}`,
-        withdrawalId
-      );
+      // Deduct only the withdrawal amount from user's wallet balance (fees paid by system)
+      const withdrawalAmount = parseFloat(withdrawal.amount);
+      const feeAmount = parseFloat(withdrawal.feeAmount || 0);
+      
+      // Get current wallet to check withdrawable balance
+      const wallet = await tx.wallet.findUnique({
+        where: { userId: withdrawal.userId }
+      });
+      
+      if (!wallet) {
+        throw new Error('Wallet not found');
+      }
+      
+      // Calculate actual earnings from transactions (not wallet table fields)
+      const dailyTaskEarnings = await tx.transaction.aggregate({
+        where: {
+          userId: withdrawal.userId,
+          type: 'VIP_EARNINGS'
+        },
+        _sum: { amount: true }
+      });
+
+      const referralBonuses = await tx.transaction.aggregate({
+        where: {
+          userId: withdrawal.userId,
+          type: 'REFERRAL_BONUS'
+        },
+        _sum: { amount: true }
+      });
+
+      const actualEarnings = parseFloat(dailyTaskEarnings._sum.amount || 0);
+      const actualBonuses = parseFloat(referralBonuses._sum.amount || 0);
+      const withdrawableBalance = actualEarnings + actualBonuses;
+      
+      if (withdrawableBalance < withdrawalAmount) {
+        throw new Error('Insufficient withdrawable balance for withdrawal');
+      }
+      
+      // Calculate proportional deductions based on actual earnings
+      const earningsRatio = withdrawableBalance > 0 ? actualEarnings / withdrawableBalance : 0;
+      const bonusRatio = withdrawableBalance > 0 ? actualBonuses / withdrawableBalance : 0;
+      
+      const earningsDeduction = withdrawalAmount * earningsRatio;
+      const bonusDeduction = withdrawalAmount * bonusRatio;
+      
+      // Update wallet with deductions (only withdrawal amount, ensure balance never goes negative)
+      const currentBalance = parseFloat(wallet.balance);
+      
+      // Always set balance to 0 if withdrawal would make it negative
+      // System covers any shortfall
+      let newBalance = 0;
+      if (currentBalance >= withdrawalAmount) {
+        newBalance = currentBalance - withdrawalAmount;
+      }
+      
+      console.log(`Withdrawal processing: Current balance ${currentBalance}, Withdrawal ${withdrawalAmount}, New balance ${newBalance}`);
+      
+      await tx.wallet.update({
+        where: { userId: withdrawal.userId },
+        data: {
+          balance: newBalance,
+          totalEarnings: {
+            decrement: earningsDeduction
+          },
+          totalReferralBonus: {
+            decrement: bonusDeduction
+          }
+        }
+      });
+      
+      // Create transaction record (only withdrawal amount)
+      await tx.transaction.create({
+        data: {
+          userId: withdrawal.userId,
+          type: 'WITHDRAWAL',
+          amount: withdrawalAmount,
+          description: `Withdrawal processed - ${withdrawal.amount} ${withdrawal.currency} (fee ${feeAmount} paid by system)`,
+          referenceId: withdrawalId
+        }
+      });
 
       return updatedWithdrawal;
     });
