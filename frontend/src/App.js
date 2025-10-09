@@ -16,7 +16,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import VerifyEmail from './pages/VerifyEmail';
 import Deposit from './pages/Deposit';
-import MotoImvestmentLanding from './pages/NovaStakingLanding';
+import MotoInvestmentLanding from './pages/NovaStakingLanding';
 
 import VipSelection from './pages/VipSelection';
 import Profile from './pages/Profile';
@@ -91,11 +91,11 @@ function App() {
               {/* Public routes */}
               <Route
                 path="/"
-                element={<MotoImvestmentLanding />}
+                element={<MotoInvestmentLanding />}
               />
               <Route
                 path="/nova-staking"
-                element={<MotoImvestmentLanding />}
+                element={<MotoInvestmentLanding />}
               />
               <Route
                 path="/login"

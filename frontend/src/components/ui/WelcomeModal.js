@@ -35,7 +35,7 @@ const WelcomeModal = ({ isOpen, onClose }) => {
             <h2 className={`text-xl font-bold ${
               isDark ? 'text-binance-text-primary' : 'text-gray-900'
             }`}>
-              Welcome to MotoImvestment, {user?.fullName || user?.email || 'User'}! 🎉
+              Welcome to Moto Investment, {user?.fullName || user?.email || 'User'}! 🎉
             </h2>
           </div>
           <button

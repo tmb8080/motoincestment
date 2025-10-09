@@ -23,22 +23,34 @@ const WalletStats = ({ stats, isLoading }) => {
     }).format(amount || 0);
   };
 
-  const walletData = stats?.data || {};
+  const walletData = stats?.data?.data || stats?.data || {};
+  console.log('Full stats response in WalletStats:', stats);
+  console.log('Wallet data in WalletStats:', walletData);
+  console.log('totalEarnings:', walletData.totalEarnings);
+  console.log('totalReferralBonus:', walletData.totalReferralBonus);
+  console.log('dailyEarnings:', walletData.dailyEarnings);
+  
+  // Calculate withdrawable balance (earnings + bonuses, excluding deposits)
+  const withdrawableBalance = parseFloat(walletData.totalEarnings || 0) + 
+                             parseFloat(walletData.totalReferralBonus || 0) + 
+                             parseFloat(walletData.dailyEarnings || 0);
+  
+  console.log('Calculated withdrawable balance in WalletStats:', withdrawableBalance);
 
   return (
     <>
-      {/* Balance Card */}
+      {/* Withdrawable Balance Card */}
       <div className="binance-stat-card border-l-4 border-l-binance-green">
-        <h3 className="binance-stat-label">Current Balance</h3>
-        <p className="binance-stat-value text-binance-green">{formatCurrency(walletData.balance)}</p>
-        <p className="binance-stat-label">Available for investment</p>
+        <h3 className="binance-stat-label">Withdrawable Balance</h3>
+        <p className="binance-stat-value text-binance-green">{formatCurrency(withdrawableBalance)}</p>
+        <p className="binance-stat-label">Available for withdrawal (earnings + bonuses)</p>
       </div>
 
-      {/* Total Deposits Card */}
+      {/* Deposited Balance Card */}
       <div className="binance-stat-card border-l-4 border-l-binance-yellow">
-        <h3 className="binance-stat-label">Total Deposits</h3>
+        <h3 className="binance-stat-label">Deposited Balance</h3>
         <p className="binance-stat-value text-binance-yellow">{formatCurrency(walletData.totalDeposits)}</p>
-        <p className="binance-stat-label">All time deposits</p>
+        <p className="binance-stat-label">Available for VIP purchases only</p>
       </div>
 
       {/* Total Withdrawals Card */}

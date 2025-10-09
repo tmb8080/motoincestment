@@ -191,7 +191,7 @@ const VipSelection = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-binance-text-primary">MotoImvestment</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-binance-text-primary">Moto Investment</h1>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-binance-green rounded-full animate-pulse"></div>
@@ -229,13 +229,17 @@ const VipSelection = () => {
             <div className="flex items-center space-x-4">
               <div className="text-center">
                 <p className="text-gray-900 dark:text-binance-text-primary font-medium text-base">
-                  Your Deposits: {walletLoading ? 'Loading...' : formatCurrency(walletStats?.data?.data?.totalDeposits || 0)}
+                  Deposited Balance: {walletLoading ? 'Loading...' : formatCurrency(walletStats?.data?.data?.totalDeposits || 0)}
                 </p>
                 <p className="text-gray-600 dark:text-binance-text-secondary text-sm">
-                  Total Balance: {walletLoading ? 'Loading...' : formatCurrency(walletStats?.data?.data?.balance || 0)}
+                  Withdrawable Balance: {walletLoading ? 'Loading...' : formatCurrency(
+                    (parseFloat(walletStats?.data?.data?.totalEarnings || 0) + 
+                     parseFloat(walletStats?.data?.data?.totalReferralBonus || 0) + 
+                     parseFloat(walletStats?.data?.data?.dailyEarnings || 0))
+                  )}
                 </p>
                 <p className="text-binance-yellow text-xs mt-1">
-                  ⚠️ Only deposits can be used for VIP upgrades
+                  ⚠️ Only deposited amounts can be used for VIP purchases. Withdrawable amounts are for withdrawals only.
                 </p>
               </div>
               <button 

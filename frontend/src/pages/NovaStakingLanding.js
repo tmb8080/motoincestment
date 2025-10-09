@@ -6,7 +6,7 @@ import Logo from '../components/ui/Logo';
 import { useTheme } from '../contexts/ThemeContext';
 import { publicAPI } from '../services/api';
 
-const MotoImvestmentLanding = () => {
+const MotoInvestmentLanding = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
@@ -722,7 +722,7 @@ const MotoImvestmentLanding = () => {
             <div>
               <h4 className={`font-bold mb-4 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Community</h4>
               <ul className={`space-y-2 transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
-                <li><a href="https://t.me/MotoImvestment" target="_blank" rel="noopener noreferrer" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Telegram</a></li>
+                <li><a href="https://t.me/Moto Investment" target="_blank" rel="noopener noreferrer" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Telegram</a></li>
                 <li><a href="#" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Twitter</a></li>
                 <li><a href="#" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Discord</a></li>
                 <li><a href="#" className={`hover:transition-colors duration-300 ${isDark ? 'hover:text-binance-text-primary' : 'hover:text-gray-900'}`}>Medium</a></li>
@@ -739,4 +739,4 @@ const MotoImvestmentLanding = () => {
   );
 };
 
-export default MotoImvestmentLanding;
+export default MotoInvestmentLanding;

@@ -118,7 +118,8 @@ const VipLevelsDisplay = () => {
     );
   }
 
-  const userBalance = walletStats?.data?.balance || 0;
+  // Use deposited balance for VIP purchases (not withdrawable balance)
+  const userBalance = walletStats?.data?.totalDeposits || 0;
   const hasVip = vipStatus?.data?.data?.userVip;
   const userVipLevel = vipStatus?.data?.data?.userVip?.vipLevel;
 
@@ -129,7 +130,7 @@ const VipLevelsDisplay = () => {
           <CardTitle className="flex items-center justify-between">
             <span>VIP Investment Levels</span>
             <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-              Balance: {formatCurrency(userBalance)}
+              Deposited Balance: {formatCurrency(userBalance)}
             </span>
           </CardTitle>
           <CardDescription>

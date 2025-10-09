@@ -100,6 +100,45 @@ const AdminPanel = () => {
     enabled: !!user?.isAdmin, // Only run if user is admin
   });
 
+  // Withdrawal fee tiers
+  const { data: feeTiersData, refetch: refetchFeeTiers } = useQuery({
+    queryKey: ['withdrawalFeeTiers'],
+    queryFn: async () => {
+      const res = await adminAPI.getWithdrawalFeeTiers();
+      return res.data.data || res.data;
+    },
+    enabled: !!user?.isAdmin,
+  });
+  const { data: feeTierValidation, refetch: refetchFeeTierValidation } = useQuery({
+    queryKey: ['withdrawalFeeTiersValidate'],
+    queryFn: async () => {
+      const res = await adminAPI.validateWithdrawalFeeTiers();
+      return res.data.data || res.data;
+    },
+    enabled: !!user?.isAdmin,
+  });
+
+  const [newTier, setNewTier] = useState({ minAmount: '', maxAmount: '', percent: '' });
+  const createTierMutation = useMutation({
+    mutationFn: (payload) => adminAPI.createWithdrawalFeeTier(payload),
+    onSuccess: () => {
+      toast.success('Fee tier created');
+      setNewTier({ minAmount: '', maxAmount: '', percent: '' });
+      refetchFeeTiers();
+      refetchFeeTierValidation();
+    },
+    onError: (e) => toast.error(e.response?.data?.message || 'Failed to create tier'),
+  });
+  const deleteTierMutation = useMutation({
+    mutationFn: (id) => adminAPI.deleteWithdrawalFeeTier(id),
+    onSuccess: () => {
+      toast.success('Fee tier deleted');
+      refetchFeeTiers();
+      refetchFeeTierValidation();
+    },
+    onError: (e) => toast.error(e.response?.data?.message || 'Failed to delete tier'),
+  });
+
   // Admin settings form state (so inputs reflect real data when opened)
   const [adminSettingsForm, setAdminSettingsForm] = useState({
     minDepositAmount: 30,
@@ -517,6 +556,7 @@ const AdminPanel = () => {
     { id: 'withdrawal-history', label: 'Withdrawal History', icon: '📋' },
     { id: 'users', label: 'Users', icon: '👥' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'fee-tiers', label: 'Fee Tiers', icon: '💳' },
     { id: 'vips', label: 'VIPs', icon: '⭐' },
     { id: 'vip-members', label: 'VIP Members', icon: '👑' },
   ];
@@ -743,6 +783,12 @@ const AdminPanel = () => {
                       <div className="text-right ml-4">
                         <div className="text-xl font-bold text-white">{formatCurrency(withdrawal.amount)}</div>
                         <div className="text-sm text-gray-300">{withdrawal.currency} • {withdrawal.network}</div>
+                        <div className="text-sm text-gray-300 mt-1">
+                          Fee: {formatCurrency(withdrawal.feeAmount || 0)}
+                        </div>
+                        <div className="text-sm text-green-400">
+                          Net: {formatCurrency((parseFloat(withdrawal.amount || 0) - parseFloat(withdrawal.feeAmount || 0)))}
+                        </div>
                         <div className="text-xs text-gray-400 mt-1">
                           ID: {withdrawal.user.id.slice(0, 8)}...
                         </div>
@@ -1038,6 +1084,105 @@ const AdminPanel = () => {
           </div>
         )}
 
+        {activeTab === 'fee-tiers' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">Withdrawal Fee Tiers</h2>
+            
+            <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-semibold text-white mb-4">Withdrawal Fee Tiers</h3>
+              <div className="overflow-x-auto mb-4">
+                <table className="min-w-full text-sm text-gray-300">
+                  <thead>
+                    <tr className="text-left text-gray-400">
+                      <th className="py-2 pr-4">Min Amount</th>
+                      <th className="py-2 pr-4">Max Amount</th>
+                      <th className="py-2 pr-4">Percent</th>
+                      <th className="py-2 pr-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(feeTiersData || []).map((t) => (
+                      <tr key={t.id} className="border-t border-white/10">
+                        <td className="py-2 pr-4">{parseFloat(t.minAmount).toFixed(2)}</td>
+                        <td className="py-2 pr-4">{t.maxAmount ? parseFloat(t.maxAmount).toFixed(2) : '∞'}</td>
+                        <td className="py-2 pr-4">{(parseFloat(t.percent) * 100).toFixed(2)}%</td>
+                        <td className="py-2 pr-4">
+                          <Button
+                            onClick={() => deleteTierMutation.mutate(t.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white"
+                          >
+                            Delete
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {feeTierValidation && (
+                <div className="mb-4 space-y-2">
+                  {feeTierValidation.overlaps?.length > 0 && (
+                    <div className="p-3 bg-red-500/10 rounded border border-red-500/30 text-red-300 text-sm">
+                      Overlaps detected: {feeTierValidation.overlaps.length}
+                    </div>
+                  )}
+                  {feeTierValidation.gaps?.length > 0 && (
+                    <div className="p-3 bg-yellow-500/10 rounded border border-yellow-500/30 text-yellow-300 text-sm">
+                      Gaps detected: {feeTierValidation.gaps.length}
+                    </div>
+                  )}
+                  {feeTierValidation.overlaps?.length === 0 && feeTierValidation.gaps?.length === 0 && (
+                    <div className="p-3 bg-green-500/10 rounded border border-green-500/30 text-green-300 text-sm">
+                      Tiers look good
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const payload = {
+                  minAmount: parseFloat(newTier.minAmount),
+                  maxAmount: newTier.maxAmount !== '' ? parseFloat(newTier.maxAmount) : undefined,
+                  percent: parseFloat(newTier.percent) / 100,
+                };
+                createTierMutation.mutate(payload);
+              }}>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <input
+                    type="number"
+                    value={newTier.minAmount}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, minAmount: e.target.value }))}
+                    placeholder="Min Amount"
+                    step="0.01"
+                    className="px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <input
+                    type="number"
+                    value={newTier.maxAmount}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, maxAmount: e.target.value }))}
+                    placeholder="Max Amount (blank = ∞)"
+                    step="0.01"
+                    className="px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <input
+                    type="number"
+                    value={newTier.percent}
+                    onChange={(e) => setNewTier(prev => ({ ...prev, percent: e.target.value }))}
+                    placeholder="Percent (%)"
+                    step="0.01"
+                    className="px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white">
+                    Add Tier
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'vips' && (
           <div className="space-y-6">
             <AdminVipManager />
@@ -1079,6 +1224,14 @@ const AdminPanel = () => {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-300 text-sm">Amount:</span>
                     <span className="text-white font-bold">{formatCurrency(selectedWithdrawal.amount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-300 text-sm">Fee:</span>
+                    <span className="text-yellow-300 font-medium">{formatCurrency(selectedWithdrawal.feeAmount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-300 text-sm">Net to send:</span>
+                    <span className="text-green-400 font-bold">{formatCurrency((parseFloat(selectedWithdrawal.amount || 0) - parseFloat(selectedWithdrawal.feeAmount || 0)))}</span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-300 text-sm">Currency:</span>

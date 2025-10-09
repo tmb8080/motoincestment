@@ -8,6 +8,7 @@ const UsdtWithdrawal = ({ onClose }) => {
   const [selectedMethod, setSelectedMethod] = useState('BEP20-USDT');
   const [withdrawalAddress, setWithdrawalAddress] = useState('');
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [feePreview, setFeePreview] = useState(null);
   const queryClient = useQueryClient();
 
   // Fetch user wallet balance
@@ -18,8 +19,22 @@ const UsdtWithdrawal = ({ onClose }) => {
     retryDelay: 1000,
   });
 
-  const minWithdrawalAmount = 2; // Default minimum
-  const walletBalance = walletStats?.data?.data?.balance || walletStats?.data?.balance || 0;
+  // Static minimum withdrawal amount
+  const minWithdrawalAmount = 20;
+  
+  // Calculate withdrawable balance (earnings + bonuses, excluding deposits)
+  const walletData = walletStats?.data?.data || walletStats?.data || {};
+  console.log('Full walletStats response:', walletStats);
+  console.log('Wallet data in UsdtWithdrawal:', walletData);
+  console.log('totalEarnings:', walletData.totalEarnings);
+  console.log('totalReferralBonus:', walletData.totalReferralBonus);
+  console.log('dailyEarnings:', walletData.dailyEarnings);
+  
+  const withdrawableBalance = parseFloat(walletData.totalEarnings || 0) + 
+                             parseFloat(walletData.totalReferralBonus || 0) + 
+                             parseFloat(walletData.dailyEarnings || 0);
+  
+  console.log('Calculated withdrawable balance:', withdrawableBalance);
 
   // Check if user is authenticated
   const token = localStorage.getItem('token');
@@ -27,10 +42,10 @@ const UsdtWithdrawal = ({ onClose }) => {
 
   // Withdrawal methods - network + currency combinations (TRON and Ethereum removed)
   const withdrawalMethods = [
-    { key: 'BEP20-USDT', network: 'BEP20', currency: 'USDT', name: 'BEP20-USDT', color: 'bg-yellow-500', fee: 0, processingTime: '5-15 minutes' },
-    { key: 'BEP20-USDC', network: 'BEP20', currency: 'USDC', name: 'BEP20-USDC', color: 'bg-blue-500', fee: 0.5, processingTime: '5-15 minutes' },
-    { key: 'POL-USDT', network: 'POLYGON', currency: 'USDT', name: 'POL-USDT', color: 'bg-purple-700', fee: 0.1, processingTime: '2-5 minutes' },
-    { key: 'POL-USDC', network: 'POLYGON', currency: 'USDC', name: 'POL-USDC', color: 'bg-blue-700', fee: 0.1, processingTime: '2-5 minutes' }
+    { key: 'BEP20-USDT', network: 'BEP20', currency: 'USDT', name: 'BEP20-USDT', color: 'bg-yellow-500', fee: 0, processingTime: '1 up to 24 hours' },
+    { key: 'BEP20-USDC', network: 'BEP20', currency: 'USDC', name: 'BEP20-USDC', color: 'bg-blue-500', fee: 0.5, processingTime: '1 up to 24 hours' },
+    { key: 'POL-USDT', network: 'POLYGON', currency: 'USDT', name: 'POL-USDT', color: 'bg-purple-700', fee: 0.1, processingTime: '1 up to 24 hours' },
+    { key: 'POL-USDC', network: 'POLYGON', currency: 'USDC', name: 'POL-USDC', color: 'bg-blue-700', fee: 0.1, processingTime: '1 up to 24 hours' }
   ];
 
   // Get selected method data
@@ -59,6 +74,17 @@ const UsdtWithdrawal = ({ onClose }) => {
       toast.error(errorMessage);
     }
   });
+
+  useEffect(() => {
+    const amt = parseFloat(withdrawalAmount);
+    if (!isNaN(amt) && amt > 0) {
+      withdrawalAPI.previewFee(amt)
+        .then((res) => setFeePreview(res.data.data))
+        .catch(() => setFeePreview(null));
+    } else {
+      setFeePreview(null);
+    }
+  }, [withdrawalAmount]);
 
   const handleWithdrawal = () => {
     if (!withdrawalAmount || parseFloat(withdrawalAmount) < minWithdrawalAmount) {
@@ -102,7 +128,7 @@ const UsdtWithdrawal = ({ onClose }) => {
           {/* Account Balance */}
           <div className="mb-6">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-300">Account balance</span>
+              <span className="text-sm font-medium text-gray-300">Withdrawable balance (earnings + bonuses)</span>
               {!isAuthenticated ? (
                 <span className="text-sm text-red-400">Not authenticated</span>
               ) : walletLoading ? (
@@ -110,7 +136,7 @@ const UsdtWithdrawal = ({ onClose }) => {
               ) : walletError ? (
                 <span className="text-sm text-red-400">Error: {walletError.message}</span>
               ) : walletStats ? (
-                <span className="text-lg font-semibold text-white">${walletBalance.toFixed(4)}</span>
+                <span className="text-lg font-semibold text-white">${withdrawableBalance.toFixed(4)}</span>
               ) : (
                 <span className="text-sm text-gray-400">No data</span>
               )}
@@ -150,12 +176,12 @@ const UsdtWithdrawal = ({ onClose }) => {
               onChange={(e) => setWithdrawalAmount(e.target.value)}
               placeholder={`Minimum $${minWithdrawalAmount} ${selectedMethodData?.currency}`}
               min={minWithdrawalAmount}
-              max={walletBalance}
+              max={withdrawableBalance}
               step="0.01"
               className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-400 mt-1">
-              Minimum withdrawal: {minWithdrawalAmount} {selectedMethodData?.currency} | Available: ${walletBalance.toFixed(2)}
+              Minimum withdrawal: {minWithdrawalAmount} {selectedMethodData?.currency} | Available: ${withdrawableBalance.toFixed(2)}
             </p>
           </div>
 
@@ -181,7 +207,14 @@ const UsdtWithdrawal = ({ onClose }) => {
             <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-blue-400/30 rounded-lg p-3 mb-6">
               <div className="text-sm text-blue-300">
                 <p className="font-medium">Method: {selectedMethodData.name}</p>
-                <p>Fee: ${selectedMethodData.fee} {selectedMethodData.currency}</p>
+                {feePreview ? (
+                  <>
+                    <p>Processing fee: ${feePreview.fee.toFixed(4)} <span className="text-xs text-green-400">(paid by system)</span></p>
+                    <p>You will receive: ${feePreview.net.toFixed(4)}</p>
+                  </>
+                ) : (
+                  <p>Enter amount to preview fee</p>
+                )}
                 <p>Processing time: {selectedMethodData.processingTime}</p>
               </div>
             </div>
@@ -191,7 +224,7 @@ const UsdtWithdrawal = ({ onClose }) => {
           <div className="mt-6 space-y-3">
             <Button
               onClick={handleWithdrawal}
-              disabled={withdrawalMutation.isLoading || !withdrawalAddress.trim() || !withdrawalAmount || parseFloat(withdrawalAmount) > walletBalance}
+              disabled={withdrawalMutation.isLoading || !withdrawalAddress.trim() || !withdrawalAmount || parseFloat(withdrawalAmount) < minWithdrawalAmount || parseFloat(withdrawalAmount) > withdrawableBalance}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {withdrawalMutation.isLoading ? 'Creating Withdrawal...' : 'Create Withdrawal Request'}

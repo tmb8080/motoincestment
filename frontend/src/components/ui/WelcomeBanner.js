@@ -83,7 +83,7 @@ const WelcomeBanner = () => {
             <h2 className={`text-lg sm:text-xl font-bold ${
               isDarkMode ? 'text-binance-text-primary' : 'text-gray-900'
             }`}>
-              Welcome to MotoImvestment, {user?.fullName || user?.email || 'User'}! 🎉
+              Welcome to Moto Investment, {user?.fullName || user?.email || 'User'}! 🎉
             </h2>
           </div>
         </div>

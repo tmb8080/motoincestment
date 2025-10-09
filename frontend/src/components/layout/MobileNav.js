@@ -154,7 +154,7 @@ const MobileNav = () => {
             <h1 className={`text-lg font-bold ${
               isAdminPanel ? 'text-binance-text-primary' : 'text-gray-900 dark:text-binance-text-primary'
             }`}>
-              {isAdminPanel ? 'Admin Panel' : 'MotoImvestment'}
+              {isAdminPanel ? 'Admin Panel' : 'Moto Investment'}
             </h1>
           </div>
 

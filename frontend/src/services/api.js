@@ -54,6 +54,7 @@ export const walletAPI = {
   getStats: () => api.get('/wallet/stats'),
   getProjectedEarnings: (params) => api.get('/wallet/projected-earnings', { params }),
   getCompanyWalletAddresses: () => api.get('/wallet/company-addresses'),
+  getAdminSettings: () => api.get('/admin/settings'),
 };
 
 // Deposit API
@@ -81,6 +82,8 @@ export const withdrawalAPI = {
   getWithdrawals: (params) => api.get('/withdrawal/history', { params }),
   getWithdrawalDetails: (id) => api.get(`/withdrawal/${id}`),
   getNetworkFees: (currency) => api.get(`/withdrawal/network-fees/${currency}`),
+  previewFee: (amount) => api.post('/withdrawal/preview-fee', { amount }),
+  getConfig: () => api.get('/withdrawal/config'),
 };
 
 // Referral API
@@ -136,6 +139,12 @@ export const adminAPI = {
   createVipLevel: (data) => api.post('/admin/vip-levels', data),
   updateVipLevel: (id, data) => api.put(`/admin/vip-levels/${id}`, data),
   deleteVipLevel: (id) => api.delete(`/admin/vip-levels/${id}`),
+  // Withdrawal fee tiers
+  getWithdrawalFeeTiers: () => api.get('/admin/withdrawal-fee-tiers'),
+  createWithdrawalFeeTier: (data) => api.post('/admin/withdrawal-fee-tiers', data),
+  updateWithdrawalFeeTier: (id, data) => api.put(`/admin/withdrawal-fee-tiers/${id}`, data),
+  deleteWithdrawalFeeTier: (id) => api.delete(`/admin/withdrawal-fee-tiers/${id}`),
+  validateWithdrawalFeeTiers: () => api.get('/admin/withdrawal-fee-tiers/validate'),
 };
 
 // Company Wallet API

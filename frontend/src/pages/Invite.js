@@ -50,7 +50,7 @@ const Invite = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-binance-text-primary">MotoImvestment</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-binance-text-primary">Moto Investment</h1>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-binance-green rounded-full animate-pulse"></div>
@@ -155,7 +155,7 @@ const Invite = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => {
-                        const text = `Join MotoImvestment and start earning with daily task sessions! Use my referral link: ${window.location.origin}/register?ref=${user?.referralCode || 'user'}`;
+                        const text = `Join Moto Investment and start earning with daily task sessions! Use my referral link: ${window.location.origin}/register?ref=${user?.referralCode || 'user'}`;
                         navigator.clipboard.writeText(text);
                         toast.success('Message copied to clipboard!');
                       }}
@@ -171,7 +171,7 @@ const Invite = () => {
                         const url = `${window.location.origin}/register?ref=${user?.referralCode || 'user'}`;
                         if (navigator.share) {
                           navigator.share({
-                            title: 'Join MotoImvestment',
+                            title: 'Join Moto Investment',
                             text: 'Start earning with daily task sessions!',
                             url: url
                           });

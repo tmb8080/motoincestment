@@ -204,7 +204,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       const displayName = user.fullName || user.email || user.phone || 'User';
-      toast.success(`🎉 Welcome to MotoImvestment, ${displayName}! Your account has been created successfully.`, {
+      toast.success(`🎉 Welcome to Moto Investment, ${displayName}! Your account has been created successfully.`, {
         duration: 5000,
         style: {
           background: '#363636',
