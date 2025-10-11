@@ -94,7 +94,7 @@ const MobileBottomNav = () => {
 
     {
       path: '/invite',
-      label: 'Invite',
+      label: 'Team',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
@@ -134,7 +134,7 @@ const MobileBottomNav = () => {
               key={item.path}
               to={item.path}
               onClick={handleNavigation}
-              className={`flex items-center justify-center p-3 rounded-lg transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 ${
                 isAdminPanel
                   ? isItemActive
                     ? 'text-binance-dark bg-binance-yellow'
@@ -145,12 +145,20 @@ const MobileBottomNav = () => {
               }`}
               title={item.label}
             >
-              <div className={isAdminPanel
-                ? isItemActive ? 'text-accent-400' : 'text-gray-300'
-                : isItemActive ? 'text-accent-600' : 'text-gray-500 dark:text-gray-400'
-              }>
+              <div className={`mb-1 ${
+                isAdminPanel
+                  ? isItemActive ? 'text-binance-dark' : 'text-gray-300'
+                  : isItemActive ? 'text-binance-dark' : 'text-gray-500 dark:text-gray-400'
+              }`}>
                 {item.icon}
               </div>
+              <span className={`text-xs font-medium ${
+                isAdminPanel
+                  ? isItemActive ? 'text-binance-dark' : 'text-gray-300'
+                  : isItemActive ? 'text-binance-dark' : 'text-gray-500 dark:text-gray-400'
+              }`}>
+                {item.label}
+              </span>
             </Link>
           );
         })}

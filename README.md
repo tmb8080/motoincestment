@@ -144,7 +144,7 @@ The platform includes a comprehensive task system that rewards users for various
    # Server
    PORT=5000
    NODE_ENV="development"
-   FRONTEND_URL="https://motoincestment.vercel.app"
+   FRONTEND_URL="https://www.motoinvestment.site"
    
    # Coinbase Commerce
    COINBASE_COMMERCE_API_KEY="your-coinbase-api-key"
@@ -201,7 +201,7 @@ The platform includes a comprehensive task system that rewards users for various
    ```
 
 The application will be available at:
-- Frontend: https://motoincestment.vercel.app
+- Frontend: https://www.motoinvestment.site
 - Backend API: https://umuhuza.store
 
 ## 🔧 Configuration

@@ -106,7 +106,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
 
     // Get referral link
     const referralLink = generateReferralLink(
-      process.env.FRONTEND_URL || 'https://motoincestment.vercel.app',
+      process.env.FRONTEND_URL || 'https://www.motoinvestment.site',
       req.user.referralCode
     );
 
