@@ -158,7 +158,8 @@ export const companyWalletAPI = {
 // Public API (no authentication required)
 export const publicAPI = {
   getVipLevels: () => api.get('/vip/public/levels'),
-  getReferralRates: () => api.get('/vip/public/referral-rates')
+  getReferralRates: () => api.get('/vip/public/referral-rates'),
+  getTokenomics: () => api.get('/vip/public/tokenomics')
 };
 
 // Generic API helpers

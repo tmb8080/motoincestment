@@ -44,6 +44,31 @@ router.get('/public/levels', async (req, res) => {
   }
 });
 
+// Public endpoint: Get tokenomics data (for landing page)
+router.get('/public/tokenomics', async (req, res) => {
+  try {
+    // Default tokenomics distribution
+    const defaultTokenomics = {
+      stakingRewards: 40,
+      teamAdvisors: 20,
+      communityIncentives: 20,
+      partnerships: 10,
+      reserveLiquidity: 10
+    };
+
+    res.json({
+      success: true,
+      data: defaultTokenomics
+    });
+  } catch (error) {
+    console.error('Error fetching tokenomics data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch tokenomics data'
+    });
+  }
+});
+
 // Public endpoint: Get referral bonus rates (for landing page)
 router.get('/public/referral-rates', async (req, res) => {
   try {

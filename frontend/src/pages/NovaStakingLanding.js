@@ -27,6 +27,14 @@ const MotoInvestmentLanding = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  // Fetch tokenomics data dynamically
+  const { data: tokenomicsData, isLoading: tokenomicsLoading, error: tokenomicsError } = useQuery({
+    queryKey: ['publicTokenomics'],
+    queryFn: publicAPI.getTokenomics,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+  });
   
   // Refs for smooth scrolling
   const heroRef = useRef(null);
@@ -108,14 +116,19 @@ const MotoInvestmentLanding = () => {
   };
 
   const calculateDailyRate = (amount, dailyEarning) => {
-    if (!amount || !dailyEarning) return '0%';
+    if (!amount || !dailyEarning) return 0;
     const rate = (dailyEarning / amount) * 100;
-    return `${rate.toFixed(1)}%`;
+    return parseFloat(rate.toFixed(1));
   };
+
+  // Calculate maximum daily rate from VIP levels
+  const maxDailyRate = vipLevelsData?.data && Array.isArray(vipLevelsData.data) 
+    ? Math.max(...vipLevelsData.data.map(vip => calculateDailyRate(vip.amount, vip.dailyEarning)))
+    : 13; // Default fallback
 
   const earningsData = (vipLevelsData?.data && Array.isArray(vipLevelsData.data)) ? vipLevelsData.data.map(vip => ({
     investment: formatCurrency(vip.amount),
-    dailyRate: calculateDailyRate(vip.amount, vip.dailyEarning),
+    dailyRate: `${calculateDailyRate(vip.amount, vip.dailyEarning)}%`,
     dailyEarnings: formatCurrency(vip.dailyEarning),
     monthlyEarnings: formatCurrency(vip.dailyEarning * 30),
     vipName: vip.name
@@ -173,6 +186,16 @@ const MotoInvestmentLanding = () => {
     { level: 'Level 3', bonus: '2%', investment100: '$2', investment500: '$10', investment1000: '$20' }
   ];
 
+  // Extract tokenomics data from API response
+  const tokenomics = tokenomicsData?.data?.data || tokenomicsData?.data || {};
+  const tokenomicsDistribution = [
+    { label: 'Staking Rewards', percentage: `${tokenomics.stakingRewards || 40}%`, color: isDark ? 'bg-binance-green' : 'bg-green-500' },
+    { label: 'Team & Advisors (12-month lock)', percentage: `${tokenomics.teamAdvisors || 20}%`, color: isDark ? 'bg-primary-500' : 'bg-blue-500' },
+    { label: 'Community Incentives & Referrals', percentage: `${tokenomics.communityIncentives || 20}%`, color: isDark ? 'bg-accent-500' : 'bg-purple-500' },
+    { label: 'Partnerships', percentage: `${tokenomics.partnerships || 10}%`, color: isDark ? 'bg-binance-yellow' : 'bg-yellow-500' },
+    { label: 'Reserve & Liquidity', percentage: `${tokenomics.reserveLiquidity || 10}%`, color: isDark ? 'bg-binance-red' : 'bg-red-500' }
+  ];
+
   const roadmapData = [
     { quarter: 'Q1 2025', title: 'Platform Launch & Community Building', items: ['Launch Moto Investment Platform', 'Build initial community', 'Establish partnerships'] },
     { quarter: 'Q2 2025', title: 'Partnerships & User Education', items: ['Strategic partnerships', 'Referral campaigns', 'Educational content'] },
@@ -189,7 +212,6 @@ const MotoInvestmentLanding = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-binance-dark' : 'bg-gray-50'}`}>
-      {/* Header */}
       <header className={`${isDark ? 'bg-binance-dark-secondary/95 border-binance-dark-border' : 'bg-white/95 border-gray-200'} backdrop-blur-md border-b sticky top-0 z-50 transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -314,7 +336,7 @@ const MotoInvestmentLanding = () => {
             </p>
             <p className={`text-lg mb-12 max-w-3xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
               Empower your investments with daily earnings and financial freedom. 
-              Start with as little as $10, enjoy stable daily rewards up to 13%, 
+              Start with as little as $10, enjoy stable daily rewards up to {maxDailyRate}%, 
               and withdraw profits anytime.
             </p>
           </div>
@@ -325,7 +347,7 @@ const MotoInvestmentLanding = () => {
               <div className={`font-medium transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Minimum Investment</div>
             </div>
             <div className={`${isDark ? 'bg-binance-dark-secondary border-binance-dark-border' : 'bg-white border-gray-200'} rounded-xl p-6 border shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl`}>
-              <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDark ? 'text-binance-yellow' : 'text-warning-600'}`}>13%</div>
+              <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDark ? 'text-binance-yellow' : 'text-warning-600'}`}>{maxDailyRate}%</div>
               <div className={`font-medium transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Maximum Daily Returns</div>
             </div>
             <div className={`${isDark ? 'bg-binance-dark-secondary border-binance-dark-border' : 'bg-white border-gray-200'} rounded-xl p-6 border shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl`}>
@@ -376,13 +398,13 @@ const MotoInvestmentLanding = () => {
             <h2 className={`text-4xl font-bold mb-6 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Our Solution: Moto Investment</h2>
             <p className={`text-xl max-w-3xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
               A transparent and easy-to-use platform where investors can start with $10, 
-              earn up to 13% daily, withdraw anytime, and earn through a 3-level referral program.
+              earn up to {maxDailyRate}% daily, withdraw anytime, and earn through a 3-level referral program.
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { title: 'Transparent Returns', description: 'Clear, consistent daily returns up to 13%', icon: '💰' },
+              { title: 'Transparent Returns', description: `Clear, consistent daily returns up to ${maxDailyRate}%`, icon: '💰' },
               { title: 'Easy Access', description: 'Start with just $10, no complex requirements', icon: '🚀' },
               { title: 'Flexible Withdrawals', description: 'Withdraw your profits anytime, 24/7', icon: '💳' },
               { title: 'Referral Rewards', description: 'Earn through our 3-level referral system', icon: '🎯' }
@@ -403,7 +425,7 @@ const MotoInvestmentLanding = () => {
           <div className="text-center mb-16">
             <h2 className={`text-4xl font-bold mb-6 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Staking Model & Earnings</h2>
             <p className={`text-xl max-w-3xl mx-auto transition-colors duration-300 ${isDark ? 'text-binance-text-secondary' : 'text-gray-600'}`}>
-              Flexible packages with returns ranging from 10% to 13% daily. 
+              Flexible packages with returns ranging from 10% to {maxDailyRate}% daily. 
               Start small and scale up for bigger rewards.
             </p>
           </div>
@@ -586,13 +608,7 @@ const MotoInvestmentLanding = () => {
             <div className={`${isDark ? 'bg-binance-dark-secondary border-binance-dark-border' : 'bg-white border-gray-200'} rounded-2xl p-8 border shadow-lg transition-all duration-300 hover:shadow-xl`}>
               <h3 className={`text-2xl font-bold mb-6 transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>Token Distribution</h3>
               <div className="space-y-4">
-                {[
-                  { label: 'Staking Rewards', percentage: '40%', color: isDark ? 'bg-binance-green' : 'bg-green-500' },
-                  { label: 'Team & Advisors (12-month lock)', percentage: '20%', color: isDark ? 'bg-primary-500' : 'bg-blue-500' },
-                  { label: 'Community Incentives & Referrals', percentage: '20%', color: isDark ? 'bg-accent-500' : 'bg-purple-500' },
-                  { label: 'Partnerships', percentage: '10%', color: isDark ? 'bg-binance-yellow' : 'bg-yellow-500' },
-                  { label: 'Reserve & Liquidity', percentage: '10%', color: isDark ? 'bg-binance-red' : 'bg-red-500' }
-                ].map((item, index) => (
+                {tokenomicsDistribution.map((item, index) => (
                   <div key={index} className="flex items-center justify-between transition-all duration-300 hover:scale-105">
                     <span className={`transition-colors duration-300 ${isDark ? 'text-binance-text-primary' : 'text-gray-900'}`}>{item.label}</span>
                     <div className="flex items-center space-x-3">
