@@ -1,6 +1,25 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { publicAPI } from '../services/api';
 
 const ReferralStats = ({ stats, isLoading }) => {
+  // Fetch referral rates dynamically
+  const { data: referralRatesData, isLoading: ratesLoading } = useQuery({
+    queryKey: ['publicReferralRates'],
+    queryFn: publicAPI.getReferralRates,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Extract rates from API response
+  const rates = referralRatesData?.data?.data || referralRatesData?.data || {};
+  const level1Rate = rates.level1Rate || 0.10; // Default to 10%
+  const level2Rate = rates.level2Rate || 0.05; // Default to 5%
+  const level3Rate = rates.level3Rate || 0.02; // Default to 2%
+
+  // Convert decimal rates to percentage for display
+  const formatRate = (rate) => Math.round(rate * 100);
+
   if (isLoading) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-md animate-pulse">
@@ -53,6 +72,34 @@ const ReferralStats = ({ stats, isLoading }) => {
             <p className="text-2xl font-bold text-green-600">
               ${parseFloat(referralData.totalBonuses || 0).toFixed(2)}
             </p>
+          </div>
+        </div>
+
+        {/* Commission Rates */}
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+            Current Commission Rates
+          </h3>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <div className="text-xs text-gray-500 mb-1">Level 1</div>
+              <div className="text-lg font-bold text-green-600">{formatRate(level1Rate)}%</div>
+              <div className="text-xs text-gray-400">Direct</div>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <div className="text-xs text-gray-500 mb-1">Level 2</div>
+              <div className="text-lg font-bold text-blue-600">{formatRate(level2Rate)}%</div>
+              <div className="text-xs text-gray-400">Indirect</div>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <div className="text-xs text-gray-500 mb-1">Level 3</div>
+              <div className="text-lg font-bold text-purple-600">{formatRate(level3Rate)}%</div>
+              <div className="text-xs text-gray-400">Third Level</div>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-gray-500 text-center">
+            Earn commissions when your referrals join VIP levels
           </div>
         </div>
 
