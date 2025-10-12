@@ -1,6 +1,25 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { publicAPI } from '../services/api';
 
 const InvitedFriendsList = ({ referralStats }) => {
+  // Fetch referral rates dynamically
+  const { data: referralRatesData, isLoading: ratesLoading } = useQuery({
+    queryKey: ['publicReferralRates'],
+    queryFn: publicAPI.getReferralRates,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Extract rates from API response
+  const rates = referralRatesData?.data?.data || referralRatesData?.data || {};
+  const level1Rate = rates.level1Rate || 0.10; // Default to 10%
+  const level2Rate = rates.level2Rate || 0.05; // Default to 5%
+  const level3Rate = rates.level3Rate || 0.02; // Default to 2%
+
+  // Convert decimal rates to percentage for display
+  const formatRate = (rate) => Math.round(rate * 100);
+
   // Axios shape is { data: { success, data: {...} } }
   const payload = referralStats?.data?.data || referralStats?.data || {};
   console.log('🔍 InvitedFriendsList - payload:', payload);
@@ -186,17 +205,17 @@ const InvitedFriendsList = ({ referralStats }) => {
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
             <span className="text-gray-300">Level 1 (Direct):</span>
-            <span className="text-yellow-300 font-medium">10% commission</span>
+            <span className="text-yellow-300 font-medium">{formatRate(level1Rate)}% commission</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full"></div>
             <span className="text-gray-300">Level 2 (Indirect):</span>
-            <span className="text-yellow-300 font-medium">5% commission</span>
+            <span className="text-yellow-300 font-medium">{formatRate(level2Rate)}% commission</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
             <span className="text-gray-300">Level 3 (Third):</span>
-            <span className="text-yellow-300 font-medium">2% commission</span>
+            <span className="text-yellow-300 font-medium">{formatRate(level3Rate)}% commission</span>
           </div>
         </div>
         <div className="mt-3 text-xs text-gray-400 text-center">

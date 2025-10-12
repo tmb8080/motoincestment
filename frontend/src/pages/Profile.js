@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
-import { walletAPI, vipAPI, taskAPI } from '../services/api';
+import { walletAPI, vipAPI, taskAPI, publicAPI } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import UsdtDeposit from '../components/UsdtDeposit';
@@ -50,6 +50,23 @@ const Profile = () => {
     queryFn: taskAPI.getEarningStatus,
     refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
   });
+
+  // Fetch referral rates dynamically
+  const { data: referralRatesData, isLoading: ratesLoading } = useQuery({
+    queryKey: ['publicReferralRates'],
+    queryFn: publicAPI.getReferralRates,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Extract rates from API response
+  const rates = referralRatesData?.data?.data || referralRatesData?.data || {};
+  const level1Rate = rates.level1Rate || 0.10; // Default to 10%
+  const level2Rate = rates.level2Rate || 0.05; // Default to 5%
+  const level3Rate = rates.level3Rate || 0.02; // Default to 2%
+
+  // Convert decimal rates to percentage for display
+  const formatRate = (rate) => Math.round(rate * 100);
 
 
 
@@ -314,7 +331,7 @@ const Profile = () => {
                       formatCurrency(walletStats?.data?.data?.totalReferralBonus || 0)
                     )}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-binance-text-tertiary mt-1">VIP commissions (L1=10%, L2=5%, L3=2%)</div>
+                <div className="text-xs text-gray-500 dark:text-binance-text-tertiary mt-1">VIP commissions (L1={formatRate(level1Rate)}%, L2={formatRate(level2Rate)}%, L3={formatRate(level3Rate)}%)</div>
                 </div>
               </div>
               <div className="mt-4">
