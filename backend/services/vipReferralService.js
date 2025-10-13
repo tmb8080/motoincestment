@@ -59,7 +59,7 @@ const processVipReferralBonus = async (userId, vipLevelId, vipAmount) => {
       userId,
       vipAmount,
       level1BonusAmount,
-      level1BonusRate,
+      level1RateDecimal, // Store decimal rate, not percentage
       1,
       null,
       vipLevelId
@@ -87,7 +87,7 @@ const processVipReferralBonus = async (userId, vipLevelId, vipAmount) => {
           userId,
           vipAmount,
           level2BonusAmount,
-          level2BonusRate,
+          level2RateDecimal, // Store decimal rate, not percentage
           2,
           null,
           vipLevelId
@@ -114,7 +114,7 @@ const processVipReferralBonus = async (userId, vipLevelId, vipAmount) => {
             userId,
             vipAmount,
             level3BonusAmount,
-            level3BonusRate,
+            level3RateDecimal, // Store decimal rate, not percentage
             3,
             null,
             vipLevelId

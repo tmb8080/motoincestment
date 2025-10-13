@@ -17,7 +17,9 @@
     "db:studio": "prisma studio",
     "db:seed": "node prisma/seed.js",
     "db:seed-vip": "node prisma/seed-vip.js",
-    "db:setup": "node scripts/setup-new-environment.js"
+    "db:setup": "node scripts/setup-new-environment.js",
+    "fix:referral-rates": "node scripts/fix-referral-bonus-rates.js",
+    "test:referral-bonus": "node scripts/test-referral-bonus.js"
 
   },
   "dependencies": {

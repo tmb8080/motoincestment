@@ -22,7 +22,11 @@ const initializeAdminSettings = async () => {
           isDepositEnabled: true,
           isWithdrawalEnabled: true,
           isRegistrationEnabled: true,
-          maintenanceMode: false
+          maintenanceMode: false,
+          // Referral bonus rates (default: 10%, 5%, 2%)
+          referralBonusLevel1Rate: 0.10,
+          referralBonusLevel2Rate: 0.05,
+          referralBonusLevel3Rate: 0.02
         }
       });
       console.log('✅ Default admin settings created');
@@ -110,7 +114,11 @@ const updateAdminSettings = async (updates) => {
           isDepositEnabled: true, // Enable deposits by default
           isWithdrawalEnabled: true,
           isRegistrationEnabled: true,
-          maintenanceMode: false
+          maintenanceMode: false,
+          // Referral bonus rates (default: 10%, 5%, 2%)
+          referralBonusLevel1Rate: 0.10,
+          referralBonusLevel2Rate: 0.05,
+          referralBonusLevel3Rate: 0.02
         }
       });
       console.log('✅ Default admin settings created');

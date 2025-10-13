@@ -1,5 +1,27 @@
 {
+  "name": "moto-investment",
+  "version": "1.0.0",
+  "description": "Moto Investment Platform - Local Development",
+  "scripts": {
+    "dev": "./start-local.sh",
+    "setup": "./setup-database.sh",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "install": "cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "test": "cd frontend && npm test"
+  },
   "dependencies": {
     "axios": "^1.11.0"
-  }
+  },
+  "keywords": [
+    "crypto",
+    "investment",
+    "referral",
+    "staking",
+    "react",
+    "nodejs"
+  ],
+  "author": "Moto Investment Team",
+  "license": "MIT"
 }

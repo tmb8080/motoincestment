@@ -38,7 +38,12 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'https://www.motoinvestment.site',
     'https://motoincestment.vercel.app',
-    'https://www.motoinvestment.site'
+    'https://www.motoinvestment.site',
+    // Local development URLs
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001'
   ],
   credentials: true
 }));
