@@ -19,7 +19,10 @@
     "db:seed-vip": "node prisma/seed-vip.js",
     "db:setup": "node scripts/setup-new-environment.js",
     "fix:referral-rates": "node scripts/fix-referral-bonus-rates.js",
-    "test:referral-bonus": "node scripts/test-referral-bonus.js"
+    "test:referral-bonus": "node scripts/test-referral-bonus.js",
+    "referrals:restart": "node scripts/restart-referrals.js restart",
+    "referrals:reset": "node scripts/restart-referrals.js reset",
+    "referrals:validate": "node scripts/restart-referrals.js validate"
 
   },
   "dependencies": {
