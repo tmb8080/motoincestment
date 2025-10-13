@@ -22,7 +22,9 @@
     "test:referral-bonus": "node scripts/test-referral-bonus.js",
     "referrals:restart": "node scripts/restart-referrals.js restart",
     "referrals:reset": "node scripts/restart-referrals.js reset",
-    "referrals:validate": "node scripts/restart-referrals.js validate"
+    "referrals:validate": "node scripts/restart-referrals.js validate",
+    "referrals:reset-restart": "node scripts/reset-restart-referrals.js reset-restart",
+    "referrals:preview": "node scripts/reset-restart-referrals.js preview"
 
   },
   "dependencies": {
