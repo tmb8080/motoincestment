@@ -821,39 +821,6 @@ const AdminPanel = () => {
                       </div>
                     </div>
 
-                    {/* User's Withdrawable Balance Calculation */}
-                    <div className="mb-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                      <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                        <span>📊</span> User's Withdrawable Balance Calculation
-                      </h4>
-                      <div className="text-xs text-gray-300 space-y-1">
-                        <div className="flex justify-between">
-                          <span>Daily Task Earnings:</span>
-                          <span className="text-green-400">+{formatCurrency(parseFloat(withdrawal.user?.wallet?.totalEarnings || 0))}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Referral Bonuses:</span>
-                          <span className="text-green-400">+{formatCurrency(parseFloat(withdrawal.user?.wallet?.totalReferralBonus || 0))}</span>
-                        </div>
-                        <div className="flex justify-between font-semibold">
-                          <span>Total Earned:</span>
-                          <span className="text-blue-400">{formatCurrency(parseFloat(withdrawal.user?.wallet?.totalEarnings || 0) + parseFloat(withdrawal.user?.wallet?.totalReferralBonus || 0))}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Total Withdrawn:</span>
-                          <span className="text-red-400">-{formatCurrency(parseFloat(withdrawal.user?.wallet?.totalWithdrawn || 0))}</span>
-                        </div>
-                        <div className="border-t border-gray-600 pt-1 mt-2">
-                          <div className="flex justify-between font-bold">
-                            <span>Available to Withdraw:</span>
-                            <span className="text-white">{formatCurrency(Math.max(0, parseFloat(withdrawal.user?.wallet?.totalEarnings || 0) + parseFloat(withdrawal.user?.wallet?.totalReferralBonus || 0) - parseFloat(withdrawal.user?.wallet?.totalWithdrawn || 0)))}</span>
-                          </div>
-                        </div>
-                        <div className="text-gray-500 mt-2">
-                          <span>Requested: {formatCurrency(withdrawal.amount)} | Deposits: {formatCurrency(parseFloat(withdrawal.user?.wallet?.totalDeposits || 0))} (VIP only)</span>
-                        </div>
-                      </div>
-                    </div>
                     
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-gray-400">
