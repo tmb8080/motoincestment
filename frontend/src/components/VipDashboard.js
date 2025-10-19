@@ -28,6 +28,13 @@ const VipDashboard = () => {
     queryFn: () => walletAPI.getStats(),
   });
 
+  // Calculate withdrawable balance: (earnings + bonuses) - withdrawals
+  // This excludes deposits from being withdrawable
+  const walletData = walletStats?.data?.data || walletStats?.data || {};
+  const totalEarned = parseFloat(walletData.totalEarnings || 0) + parseFloat(walletData.totalReferralBonus || 0);
+  const totalWithdrawn = parseFloat(walletData.totalWithdrawn || 0);
+  const withdrawableBalance = Math.max(0, totalEarned - totalWithdrawn);
+
   // Start earning mutation
   const startEarningMutation = useMutation({
     mutationFn: () => vipAPI.startEarning(),
@@ -311,30 +318,65 @@ const VipDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Earnings Withdrawal Card */}
+      {/* Withdrawable Balance Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Daily Earnings</CardTitle>
+          <CardTitle>Withdrawable Balance</CardTitle>
           <CardDescription>
-            Withdraw your earned income to your main balance (minimum $2)
+            Withdraw your earned income and bonuses to your main balance (minimum $2)
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
-              <div>
-                <p className="text-sm text-gray-600">Available Earnings</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(todayEarnings)}
-                </p>
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <p className="text-sm text-gray-600">Available to Withdraw</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {walletLoading ? 'Loading...' : formatCurrency(withdrawableBalance)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Total Earned</p>
+                  <p className="font-semibold">
+                    {walletLoading ? 'Loading...' : formatCurrency(totalEarned)}
+                  </p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Today's Total</p>
-                <p className="font-semibold">{formatCurrency(todayEarnings)}</p>
-              </div>
+              
+              {/* Calculation Breakdown */}
+              {!walletLoading && (
+                <div className="text-xs text-gray-600 space-y-1 bg-white/50 p-3 rounded">
+                  <div className="flex justify-between">
+                    <span>Daily Task Earnings:</span>
+                    <span className="text-green-600">+{formatCurrency(parseFloat(walletData.totalEarnings || 0))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Referral Bonuses:</span>
+                    <span className="text-green-600">+{formatCurrency(parseFloat(walletData.totalReferralBonus || 0))}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold">
+                    <span>Total Earned:</span>
+                    <span className="text-blue-600">{formatCurrency(totalEarned)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Withdrawn:</span>
+                    <span className="text-red-600">-{formatCurrency(totalWithdrawn)}</span>
+                  </div>
+                  <div className="border-t border-gray-300 pt-1 mt-2">
+                    <div className="flex justify-between font-bold">
+                      <span>Available to Withdraw:</span>
+                      <span className="text-blue-800">{formatCurrency(withdrawableBalance)}</span>
+                    </div>
+                  </div>
+                  <div className="text-gray-500 mt-2 text-center">
+                    <span>Deposits ({formatCurrency(parseFloat(walletData.totalDeposits || 0))}) for VIP purchases only</span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {todayEarnings >= 2 ? (
+            {withdrawableBalance >= 2 ? (
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -346,13 +388,13 @@ const VipDashboard = () => {
                     onChange={(e) => setWithdrawAmount(e.target.value)}
                     placeholder="Enter amount (min $2)"
                     min="2"
-                    max={todayEarnings}
+                    max={withdrawableBalance}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <Button 
                   onClick={handleWithdrawEarnings}
-                  disabled={withdrawEarningsMutation.isLoading || !withdrawAmount || parseFloat(withdrawAmount) < 2}
+                  disabled={withdrawEarningsMutation.isLoading || !withdrawAmount || parseFloat(withdrawAmount) < 2 || parseFloat(withdrawAmount) > withdrawableBalance}
                   className="w-full"
                 >
                   {withdrawEarningsMutation.isLoading ? 'Processing...' : 'Withdraw to Main Balance'}
@@ -361,7 +403,7 @@ const VipDashboard = () => {
             ) : (
               <div className="text-center py-4">
                 <p className="text-gray-600">
-                  Minimum $2 earnings required for withdrawal
+                  Minimum $2 withdrawable balance required for withdrawal
                 </p>
               </div>
             )}

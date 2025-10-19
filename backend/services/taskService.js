@@ -3,12 +3,11 @@ const { updateWalletBalance } = require('./walletService');
 const prisma = new PrismaClient();
 
 /**
- * Check if current day is weekend (Saturday or Sunday)
+ * Check if current day is weekend (Saturday or Sunday) - DISABLED
+ * Weekend restrictions have been removed - users can now complete tasks any day
  */
 function isWeekend() {
-  const today = new Date();
-  const dayOfWeek = today.getDay();
-  return dayOfWeek === 0 || dayOfWeek === 6; // 0 = Sunday, 6 = Saturday
+  return false; // Weekend restrictions disabled
 }
 
 /**
@@ -16,10 +15,7 @@ function isWeekend() {
  */
 async function startEarningSession(userId) {
   try {
-    // Check if it's weekend and prevent task completion
-    if (isWeekend()) {
-      throw new Error('Daily tasks cannot be completed on weekends (Saturday and Sunday). Please try again on weekdays (Monday to Friday).');
-    }
+    // Weekend restrictions removed - users can complete tasks any day
 
     // Check if user has an active VIP level
     const userVip = await prisma.userVip.findFirst({
@@ -281,27 +277,13 @@ async function getEarningSessionStatus(userId) {
       }
     }
 
-    // Check if it's weekend
-    if (isWeekend()) {
-      const dayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-      return {
-        success: true,
-        data: {
-          hasActiveSession: false,
-          canStart: false,
-          isWeekend: true,
-          dayName: dayName,
-          message: `Daily tasks are not available on ${dayName}s. Please try again on weekdays (Monday to Friday).`
-        }
-      };
-    }
+    // Weekend restrictions removed - users can complete tasks any day
 
     return {
       success: true,
       data: {
         hasActiveSession: false,
         canStart: true,
-        isWeekend: false,
         message: 'Ready to start daily task! Click "Start Daily Task" to begin your 1-hour earning session based on your VIP level.'
       }
     };
@@ -374,21 +356,18 @@ async function getAvailableTasks(userId) {
     
     const canStart = sessionStatus.data.canStart;
     const hasActiveSession = sessionStatus.data.hasActiveSession;
-    const isWeekend = sessionStatus.data.isWeekend || false;
 
     return {
       success: true,
       data: [{
         ...task,
-        status: hasActiveSession ? 'IN_PROGRESS' : (canStart ? 'PENDING' : (isWeekend ? 'WEEKEND_RESTRICTED' : 'COOLDOWN')),
+        status: hasActiveSession ? 'IN_PROGRESS' : (canStart ? 'PENDING' : 'COOLDOWN'),
         canStart,
         canComplete: false,
-        isWeekend,
         progress: hasActiveSession ? sessionStatus.data.progress || 0 : 0,
         message: sessionStatus.data.message,
         cooldownRemaining: sessionStatus.data.cooldownRemaining,
-        lastEarnings: sessionStatus.data.lastEarnings,
-        dayName: sessionStatus.data.dayName
+        lastEarnings: sessionStatus.data.lastEarnings
       }]
     };
   } catch (error) {

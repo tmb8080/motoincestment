@@ -22,17 +22,21 @@ const UsdtWithdrawal = ({ onClose }) => {
   // Static minimum withdrawal amount
   const minWithdrawalAmount = 20;
   
-  // Calculate withdrawable balance (earnings + bonuses, excluding deposits)
+  // Calculate withdrawable balance (earnings + bonuses - withdrawals, excluding deposits)
   const walletData = walletStats?.data?.data || walletStats?.data || {};
   console.log('Full walletStats response:', walletStats);
   console.log('Wallet data in UsdtWithdrawal:', walletData);
   console.log('totalEarnings:', walletData.totalEarnings);
   console.log('totalReferralBonus:', walletData.totalReferralBonus);
-  console.log('dailyEarnings:', walletData.dailyEarnings);
+  console.log('totalWithdrawn:', walletData.totalWithdrawn);
+  console.log('balance:', walletData.balance);
+  console.log('totalDeposits:', walletData.totalDeposits);
   
-  const withdrawableBalance = parseFloat(walletData.totalEarnings || 0) + 
-                             parseFloat(walletData.totalReferralBonus || 0) + 
-                             parseFloat(walletData.dailyEarnings || 0);
+  // Calculate withdrawable balance: (earnings + bonuses) - withdrawals
+  // This excludes deposits from being withdrawable
+  const totalEarned = parseFloat(walletData.totalEarnings || 0) + parseFloat(walletData.totalReferralBonus || 0);
+  const totalWithdrawn = parseFloat(walletData.totalWithdrawn || 0);
+  const withdrawableBalance = Math.max(0, totalEarned - totalWithdrawn);
   
   console.log('Calculated withdrawable balance:', withdrawableBalance);
 
@@ -125,20 +129,53 @@ const UsdtWithdrawal = ({ onClose }) => {
         </div>
 
         <div className="p-4">
-          {/* Account Balance */}
+          {/* Withdrawable Balance with Calculation Breakdown */}
           <div className="mb-6">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-300">Withdrawable balance (earnings + bonuses)</span>
-              {!isAuthenticated ? (
-                <span className="text-sm text-red-400">Not authenticated</span>
-              ) : walletLoading ? (
-                <span className="text-sm text-gray-400">Loading...</span>
-              ) : walletError ? (
-                <span className="text-sm text-red-400">Error: {walletError.message}</span>
-              ) : walletStats ? (
-                <span className="text-lg font-semibold text-white">${withdrawableBalance.toFixed(4)}</span>
-              ) : (
-                <span className="text-sm text-gray-400">No data</span>
+            <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-medium text-gray-300">Withdrawable balance (earnings + bonuses)</span>
+                {!isAuthenticated ? (
+                  <span className="text-sm text-red-400">Not authenticated</span>
+                ) : walletLoading ? (
+                  <span className="text-sm text-gray-400">Loading...</span>
+                ) : walletError ? (
+                  <span className="text-sm text-red-400">Error: {walletError.message}</span>
+                ) : walletStats ? (
+                  <span className="text-lg font-semibold text-white">${withdrawableBalance.toFixed(4)}</span>
+                ) : (
+                  <span className="text-sm text-gray-400">No data</span>
+                )}
+              </div>
+              
+              {/* Calculation Breakdown */}
+              {walletStats && !walletLoading && !walletError && (
+                <div className="text-xs text-gray-400 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Daily Task Earnings:</span>
+                    <span className="text-green-400">+${parseFloat(walletData.totalEarnings || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Referral Bonuses:</span>
+                    <span className="text-green-400">+${parseFloat(walletData.totalReferralBonus || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Earned:</span>
+                    <span className="text-blue-400">${totalEarned.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Withdrawn:</span>
+                    <span className="text-red-400">-${totalWithdrawn.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-gray-600 pt-1 mt-2">
+                    <div className="flex justify-between font-semibold">
+                      <span>Available to Withdraw:</span>
+                      <span className="text-white">${withdrawableBalance.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="text-gray-500 mt-2">
+                    <span>Note: Deposits (${parseFloat(walletData.totalDeposits || 0).toFixed(2)}) can only be used for VIP purchases</span>
+                  </div>
+                </div>
               )}
             </div>
           </div>

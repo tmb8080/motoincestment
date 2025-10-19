@@ -595,9 +595,27 @@ const processVerifiedWithdrawal = async (withdrawalId, adminId, transactionHash 
         _sum: { amount: true }
       });
 
+      // Calculate total withdrawn amount to prevent double withdrawals
+      const totalWithdrawn = await tx.transaction.aggregate({
+        where: {
+          userId: withdrawal.userId,
+          type: 'WITHDRAWAL'
+        },
+        _sum: { amount: true }
+      });
+
       const actualEarnings = parseFloat(dailyTaskEarnings._sum.amount || 0);
       const actualBonuses = parseFloat(referralBonuses._sum.amount || 0);
-      const withdrawableBalance = actualEarnings + actualBonuses;
+      const totalWithdrawnAmount = parseFloat(totalWithdrawn._sum.amount || 0);
+      const withdrawableBalance = actualEarnings + actualBonuses - totalWithdrawnAmount;
+      
+      console.log(`Withdrawal verification - calculated balance:`, {
+        actualEarnings,
+        actualBonuses,
+        totalWithdrawnAmount,
+        withdrawableBalance,
+        withdrawalAmount
+      });
       
       if (withdrawableBalance < withdrawalAmount) {
         throw new Error('Insufficient withdrawable balance for withdrawal');
@@ -610,6 +628,14 @@ const processVerifiedWithdrawal = async (withdrawalId, adminId, transactionHash 
       const earningsDeduction = withdrawalAmount * earningsRatio;
       const bonusDeduction = withdrawalAmount * bonusRatio;
       
+      // Calculate daily earnings deduction (proportional to total earnings)
+      const currentDailyEarnings = parseFloat(wallet.dailyEarnings || 0);
+      let dailyEarningsDeduction = 0;
+      
+      if (actualEarnings > 0) {
+        dailyEarningsDeduction = (earningsDeduction / actualEarnings) * currentDailyEarnings;
+      }
+      
       // Update wallet with deductions (only withdrawal amount, ensure balance never goes negative)
       const currentBalance = parseFloat(wallet.balance);
       
@@ -621,6 +647,7 @@ const processVerifiedWithdrawal = async (withdrawalId, adminId, transactionHash 
       }
       
       console.log(`Withdrawal processing: Current balance ${currentBalance}, Withdrawal ${withdrawalAmount}, New balance ${newBalance}`);
+      console.log(`Daily earnings deduction: ${dailyEarningsDeduction}`);
       
       await tx.wallet.update({
         where: { userId: withdrawal.userId },
@@ -631,6 +658,9 @@ const processVerifiedWithdrawal = async (withdrawalId, adminId, transactionHash 
           },
           totalReferralBonus: {
             decrement: bonusDeduction
+          },
+          dailyEarnings: {
+            decrement: dailyEarningsDeduction
           }
         }
       });

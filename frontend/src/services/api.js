@@ -127,7 +127,6 @@ export const adminAPI = {
   getSettings: () => api.get('/admin/settings'),
   updateSettings: (data) => api.put('/admin/settings', data),
   getVipMembers: (params) => api.get('/admin/vip-members', { params }),
-  getReferralTree: (userId, depth = 3) => api.get(`/admin/users/${userId}/referral-tree`, { params: { depth } }),
   processWithdrawal: (withdrawalId, action, data) => api.patch(`/admin/withdrawals/${withdrawalId}/process`, { action, ...data }),
   updateWithdrawal: (withdrawalId, data) => api.put(`/admin/withdrawals/${withdrawalId}`, data),
   processDeposit: (depositId, action, data) => api.post(`/admin/deposits/${depositId}/${action}`, data),
@@ -147,6 +146,11 @@ export const adminAPI = {
   updateWithdrawalFeeTier: (id, data) => api.put(`/admin/withdrawal-fee-tiers/${id}`, data),
   deleteWithdrawalFeeTier: (id) => api.delete(`/admin/withdrawal-fee-tiers/${id}`),
   validateWithdrawalFeeTiers: () => api.get('/admin/withdrawal-fee-tiers/validate'),
+  // User-specific history
+  getUserDeposits: (userId, params) => api.get(`/admin/users/${userId}/deposits`, { params }),
+  getUserWithdrawals: (userId, params) => api.get(`/admin/users/${userId}/withdrawals`, { params }),
+  getReferralTree: (userId, depth = 3) => api.get(`/admin/users/${userId}/referral-tree?depth=${depth}`),
+  getUserDailyEarnings: (userId, params) => api.get(`/admin/users/${userId}/daily-earnings`, { params }),
 };
 
 // Company Wallet API

@@ -179,7 +179,7 @@ const getWalletStats = async (userId) => {
       _sum: { amount: true }
     });
 
-    // Calculate total withdrawals (completed and approved)
+    // Calculate total withdrawals from withdrawal table (excluding fees - admin pays fees)
     const totalWithdrawals = await prisma.withdrawal.aggregate({
       where: {
         userId,
@@ -192,7 +192,7 @@ const getWalletStats = async (userId) => {
       balance: parseFloat(wallet.balance),
       totalDeposits: parseFloat(wallet.totalDeposits),
       totalEarnings: parseFloat(dailyTaskEarnings._sum.amount || 0), // Only daily task earnings
-      totalReferralBonus: parseFloat(wallet.totalReferralBonus),
+      totalReferralBonus: parseFloat(referralBonuses._sum.amount || 0), // Use calculated value from transactions
       totalWithdrawn: parseFloat(totalWithdrawals._sum.amount || 0), // Total completed withdrawals
       lastGrowthUpdate: wallet.lastGrowthUpdate,
       referralCode: wallet.user.referralCode,
@@ -223,6 +223,17 @@ const updateWalletBalance = async (userId, amount, type, description, referenceI
       // Update specific totals based on type
       if (type === 'DEPOSIT') {
         updateData.totalDeposits = {
+          increment: Math.abs(amount)
+        };
+      } else if (type === 'VIP_EARNINGS') {
+        updateData.totalEarnings = {
+          increment: Math.abs(amount)
+        };
+        updateData.dailyEarnings = {
+          increment: Math.abs(amount)
+        };
+      } else if (type === 'REFERRAL_BONUS') {
+        updateData.totalReferralBonus = {
           increment: Math.abs(amount)
         };
       }

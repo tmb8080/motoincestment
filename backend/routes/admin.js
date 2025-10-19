@@ -9,7 +9,8 @@ const {
   toggleUserStatus,
   getAdminSettings,
   updateAdminSettings,
-  getReferralTree
+  getReferralTree,
+  getUserDailyEarnings
 } = require('../services/adminService');
 const { 
   createOrUpdateVipLevels,
@@ -91,7 +92,16 @@ router.get('/withdrawals', [
               id: true,
               fullName: true,
               email: true,
-              phone: true
+              phone: true,
+              wallet: {
+                select: {
+                  balance: true,
+                  totalEarnings: true,
+                  totalReferralBonus: true,
+                  totalDeposits: true,
+                  dailyEarnings: true
+                }
+              }
             }
           }
         },
@@ -136,16 +146,50 @@ router.get('/withdrawals/pending', async (req, res) => {
             id: true,
             fullName: true,
             email: true,
-            phone: true
+            phone: true,
+            wallet: {
+              select: {
+                balance: true,
+                totalEarnings: true,
+                totalReferralBonus: true,
+                totalDeposits: true,
+                dailyEarnings: true
+              }
+            }
           }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
+    // Calculate total withdrawn for each user (excluding fees - admin pays fees)
+    const withdrawalsWithTotalWithdrawn = await Promise.all(
+      withdrawals.map(async (withdrawal) => {
+        // Get total withdrawn from withdrawal table (original amounts without fees)
+        const totalWithdrawn = await prisma.withdrawal.aggregate({
+          where: {
+            userId: withdrawal.userId,
+            status: { in: ['COMPLETED', 'APPROVED'] }
+          },
+          _sum: { amount: true }
+        });
+
+        return {
+          ...withdrawal,
+          user: {
+            ...withdrawal.user,
+            wallet: {
+              ...withdrawal.user.wallet,
+              totalWithdrawn: parseFloat(totalWithdrawn._sum.amount || 0)
+            }
+          }
+        };
+      })
+    );
+
     res.json({
       success: true,
-      data: withdrawals
+      data: withdrawalsWithTotalWithdrawn
     });
   } catch (error) {
     console.error('Error fetching pending withdrawals:', error);
@@ -311,18 +355,53 @@ router.patch('/withdrawals/:id/process', [
       // If approved, deduct only withdrawal amount from user's wallet (fees paid by system)
       if (action === 'APPROVE') {
         const feeAmount = parseFloat(withdrawal.feeAmount || 0);
-        const currentBalance = parseFloat((await tx.wallet.findUnique({ where: { userId: withdrawal.userId } })).balance);
+        const withdrawalAmount = parseFloat(withdrawal.amount);
         
-        // Only deduct withdrawal amount, ensure balance never goes negative
-        let newBalance = 0;
-        if (currentBalance >= parseFloat(withdrawal.amount)) {
-          newBalance = currentBalance - parseFloat(withdrawal.amount);
+        // Get current wallet
+        const currentWallet = await tx.wallet.findUnique({ 
+          where: { userId: withdrawal.userId } 
+        });
+        
+        // Calculate proportional deduction from earnings vs bonuses
+        const totalEarnings = parseFloat(currentWallet.totalEarnings || 0);
+        const totalBonuses = parseFloat(currentWallet.totalReferralBonus || 0);
+        const dailyEarnings = parseFloat(currentWallet.dailyEarnings || 0);
+        const totalWithdrawable = totalEarnings + totalBonuses;
+        
+        let earningsDeduction = 0;
+        let bonusDeduction = 0;
+        let dailyEarningsDeduction = 0;
+        
+        if (totalWithdrawable > 0) {
+          const earningsRatio = totalEarnings / totalWithdrawable;
+          const bonusRatio = totalBonuses / totalWithdrawable;
+          
+          earningsDeduction = withdrawalAmount * earningsRatio;
+          bonusDeduction = withdrawalAmount * bonusRatio;
+          
+          // Calculate daily earnings deduction (proportional to total earnings)
+          if (totalEarnings > 0) {
+            dailyEarningsDeduction = (earningsDeduction / totalEarnings) * dailyEarnings;
+          }
         }
+        
+        // Calculate new balance
+        const currentBalance = parseFloat(currentWallet.balance);
+        let newBalance = Math.max(0, currentBalance - withdrawalAmount);
         
         await tx.wallet.update({
           where: { userId: withdrawal.userId },
           data: {
-            balance: newBalance
+            balance: newBalance,
+            totalEarnings: {
+              decrement: earningsDeduction
+            },
+            totalReferralBonus: {
+              decrement: bonusDeduction
+            },
+            dailyEarnings: {
+              decrement: dailyEarningsDeduction
+            }
           }
         });
 
@@ -684,6 +763,154 @@ router.get('/users/:userId/referral-tree', [
     console.error('Error fetching referral tree:', error);
     res.status(500).json({
       error: 'Failed to fetch referral tree',
+      message: error.message
+    });
+  }
+});
+
+// Get daily earnings history for a user
+router.get('/users/:userId/daily-earnings', [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+  query('dateFilter').optional().isIn(['all', 'week', 'month', 'year']).withMessage('Invalid date filter'),
+  query('sortBy').optional().isIn(['date', 'amount']).withMessage('Invalid sort option')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { userId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const dateFilter = req.query.dateFilter || 'all';
+    const sortBy = req.query.sortBy || 'date';
+
+    const earnings = await getUserDailyEarnings(userId, {
+      page,
+      limit,
+      dateFilter,
+      sortBy
+    });
+    
+    res.json({
+      success: true,
+      data: earnings
+    });
+  } catch (error) {
+    console.error('Error fetching daily earnings:', error);
+    res.status(500).json({
+      error: 'Failed to fetch daily earnings',
+      message: error.message
+    });
+  }
+});
+
+// Get user deposits
+router.get('/users/:userId/deposits', [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { userId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get deposits for the specific user
+    const [deposits, total] = await Promise.all([
+      prisma.deposit.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.deposit.count({ where: { userId } })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      success: true,
+      data: deposits,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limit
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user deposits:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user deposits',
+      message: error.message
+    });
+  }
+});
+
+// Get user withdrawals
+router.get('/users/:userId/withdrawals', [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { userId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get withdrawals for the specific user
+    const [withdrawals, total] = await Promise.all([
+      prisma.withdrawal.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.withdrawal.count({ where: { userId } })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      success: true,
+      data: withdrawals,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limit
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user withdrawals:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user withdrawals',
       message: error.message
     });
   }

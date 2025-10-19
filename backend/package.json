@@ -24,7 +24,13 @@
     "referrals:reset": "node scripts/restart-referrals.js reset",
     "referrals:validate": "node scripts/restart-referrals.js validate",
     "referrals:reset-restart": "node scripts/reset-restart-referrals.js reset-restart",
-    "referrals:preview": "node scripts/reset-restart-referrals.js preview"
+    "referrals:preview": "node scripts/reset-restart-referrals.js preview",
+    "fix:withdrawal-balance": "node scripts/fix-withdrawal-balance.js fix",
+    "test:withdrawal-balance": "node scripts/fix-withdrawal-balance.js test",
+    "fix:daily-earnings": "node scripts/fix-daily-earnings.js fix",
+    "test:daily-earnings": "node scripts/fix-daily-earnings.js test",
+    "sync:wallet-data": "node scripts/sync-wallet-data.js all",
+    "sync:wallet-user": "node scripts/sync-wallet-data.js user"
 
   },
   "dependencies": {

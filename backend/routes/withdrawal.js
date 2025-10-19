@@ -121,16 +121,28 @@ router.post('/request', [
       _sum: { amount: true }
     });
 
+    // Calculate total withdrawn amount to prevent double withdrawals
+    const totalWithdrawn = await prisma.transaction.aggregate({
+      where: {
+        userId,
+        type: 'WITHDRAWAL'
+      },
+      _sum: { amount: true }
+    });
+
     console.log('Backend withdrawal validation - calculated earnings:', {
       dailyTaskEarnings: dailyTaskEarnings._sum.amount,
       referralBonuses: referralBonuses._sum.amount,
+      totalWithdrawn: totalWithdrawn._sum.amount,
       walletTotalEarnings: wallet.totalEarnings,
       walletTotalReferralBonus: wallet.totalReferralBonus,
       walletDailyEarnings: wallet.dailyEarnings
     });
     
-    const withdrawableBalance = parseFloat(dailyTaskEarnings._sum.amount || 0) + 
-                               parseFloat(referralBonuses._sum.amount || 0);
+    const totalEarned = parseFloat(dailyTaskEarnings._sum.amount || 0) + 
+                       parseFloat(referralBonuses._sum.amount || 0);
+    const totalWithdrawnAmount = parseFloat(totalWithdrawn._sum.amount || 0);
+    const withdrawableBalance = totalEarned - totalWithdrawnAmount;
 
     console.log('Backend calculated withdrawable balance:', withdrawableBalance);
     console.log('Requested amount:', parseFloat(amount));
@@ -321,7 +333,16 @@ router.get('/admin/requests', [
             select: {
               id: true,
               fullName: true,
-              email: true
+              email: true,
+              wallet: {
+                select: {
+                  balance: true,
+                  totalEarnings: true,
+                  totalReferralBonus: true,
+                  totalDeposits: true,
+                  dailyEarnings: true
+                }
+              }
             }
           }
         },

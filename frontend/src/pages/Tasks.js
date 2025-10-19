@@ -218,33 +218,6 @@ const Tasks = () => {
                     </div>
                   </div>
                 </div>
-              ) : earningStatus?.data?.data?.isWeekend ? (
-                <div className="text-center py-8 sm:py-16">
-                  <div className="relative mb-8 sm:mb-12">
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 bg-gray-100 dark:bg-binance-dark-tertiary rounded-full flex items-center justify-center mx-auto shadow-lg border border-gray-200 dark:border-binance-dark-border">
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-orange-500 rounded-full flex items-center justify-center">
-                        <svg className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-binance-text-primary mb-4 sm:mb-6">Weekend Restriction 🚫</h3>
-                  <p className="text-gray-600 dark:text-binance-text-secondary mb-8 sm:mb-12 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed px-4">
-                    {earningStatus?.data?.data?.message || `Daily tasks are not available on ${earningStatus?.data?.data?.dayName || 'weekends'}. Please try again on weekdays (Monday to Friday).`}
-                  </p>
-                  
-                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-6 max-w-md mx-auto">
-                    <div className="flex items-center justify-center space-x-2 mb-2">
-                      <span className="text-orange-600 dark:text-orange-400 text-lg">📅</span>
-                      <span className="text-orange-600 dark:text-orange-400 font-semibold">Weekend Notice</span>
-                    </div>
-                    <div className="text-orange-600 dark:text-orange-400 text-sm">
-                      Daily tasks are only available Monday through Friday
-                    </div>
-                  </div>
-                </div>
               ) : earningStatus?.data?.data?.cooldownRemaining ? (
                 <div className="text-center py-8 sm:py-16">
                   <div className="relative mb-8 sm:mb-12">

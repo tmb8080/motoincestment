@@ -199,8 +199,9 @@ const getSystemStats = async () => {
         _count: true
       }),
       
-      // Total withdrawals (all statuses)
+      // Total withdrawals (excluding rejected)
       prisma.withdrawal.aggregate({
+        where: { status: { not: 'REJECTED' } },
         _sum: { amount: true },
         _count: true
       }),
@@ -377,7 +378,9 @@ const getUserManagementData = async (page = 1, limit = 20, search = '') => {
           totalDeposits,
           totalWithdrawals,
           dailyEarnings,
-          referralEarnings
+          referralEarnings,
+          firstDailyTask,
+          totalDailyEarnings
         ] = await Promise.all([
           // Total deposits
           prisma.deposit.aggregate({
@@ -386,9 +389,12 @@ const getUserManagementData = async (page = 1, limit = 20, search = '') => {
             _count: true
           }),
           
-          // Total withdrawals
+          // Total withdrawals (excluding rejected)
           prisma.withdrawal.aggregate({
-            where: { userId: user.id },
+            where: { 
+              userId: user.id,
+              status: { not: 'REJECTED' }
+            },
             _sum: { amount: true },
             _count: true
           }),
@@ -412,6 +418,25 @@ const getUserManagementData = async (page = 1, limit = 20, search = '') => {
               type: 'REFERRAL_BONUS'
             },
             _sum: { amount: true }
+          }),
+          
+          // First daily task (VIP_EARNINGS transaction)
+          prisma.transaction.findFirst({
+            where: {
+              userId: user.id,
+              type: 'VIP_EARNINGS'
+            },
+            orderBy: { createdAt: 'asc' },
+            select: { createdAt: true }
+          }),
+          
+          // Total daily earnings (all VIP_EARNINGS transactions)
+          prisma.transaction.aggregate({
+            where: {
+              userId: user.id,
+              type: 'VIP_EARNINGS'
+            },
+            _sum: { amount: true }
           })
         ]);
 
@@ -423,7 +448,9 @@ const getUserManagementData = async (page = 1, limit = 20, search = '') => {
             totalWithdrawals: totalWithdrawals._sum.amount || 0,
             totalWithdrawalsCount: totalWithdrawals._count || 0,
             dailyEarnings: dailyEarnings._sum.amount || 0,
-            referralEarnings: referralEarnings._sum.amount || 0
+            referralEarnings: referralEarnings._sum.amount || 0,
+            firstDailyTaskDate: firstDailyTask?.createdAt || null,
+            totalDailyEarnings: totalDailyEarnings._sum.amount || 0
           }
         };
       })
@@ -471,7 +498,7 @@ const toggleUserStatus = async (userId) => {
   }
 };
 
-// Get referral tree for a user
+// Get referral tree for a user with detailed information
 const getReferralTree = async (userId, depth = 3) => {
   try {
     const buildTree = async (parentId, currentDepth) => {
@@ -479,28 +506,79 @@ const getReferralTree = async (userId, depth = 3) => {
       
       const referrals = await prisma.user.findMany({
         where: { referredBy: parentId },
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-          referralCode: true,
-          createdAt: true,
+        include: {
           wallet: {
             select: {
               balance: true,
-              totalDeposits: true
+              totalDeposits: true,
+              totalEarnings: true,
+              totalReferralBonus: true
             }
+          },
+          userVip: {
+            include: {
+              vipLevel: {
+                select: {
+                  name: true,
+                  amount: true
+                }
+              }
+            }
+          },
+          referralBonusesReceived: {
+            include: {
+              referred: {
+                select: {
+                  id: true,
+                  email: true,
+                  phone: true,
+                  fullName: true
+                }
+              }
+            },
+            orderBy: { createdAt: 'desc' }
           }
         }
       });
 
       const tree = [];
       for (const referral of referrals) {
+        // Get financial data for this user
+        const [
+          totalDeposits,
+          totalWithdrawals,
+          totalDailyEarnings
+        ] = await Promise.all([
+          prisma.deposit.aggregate({
+            where: { userId: referral.id },
+            _sum: { amount: true }
+          }),
+          prisma.withdrawal.aggregate({
+            where: { 
+              userId: referral.id,
+              status: { not: 'REJECTED' }
+            },
+            _sum: { amount: true }
+          }),
+          prisma.transaction.aggregate({
+            where: {
+              userId: referral.id,
+              type: 'VIP_EARNINGS'
+            },
+            _sum: { amount: true }
+          })
+        ]);
+
         const children = await buildTree(referral.id, currentDepth + 1);
         tree.push({
           ...referral,
-          children,
-          level: currentDepth
+          referrals: children, // Changed from 'children' to 'referrals' for consistency
+          level: currentDepth,
+          financialData: {
+            totalDeposits: totalDeposits._sum.amount || 0,
+            totalWithdrawals: totalWithdrawals._sum.amount || 0,
+            totalDailyEarnings: totalDailyEarnings._sum.amount || 0
+          }
         });
       }
 
@@ -515,6 +593,170 @@ const getReferralTree = async (userId, depth = 3) => {
   }
 };
 
+// Get user daily earnings history
+const getUserDailyEarnings = async (userId, options = {}) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      dateFilter = 'all',
+      sortBy = 'date'
+    } = options;
+
+    const skip = (page - 1) * limit;
+
+    // Build date filter
+    let dateFilterClause = {};
+    const now = new Date();
+    
+    switch (dateFilter) {
+      case 'week':
+        dateFilterClause = {
+          createdAt: {
+            gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          }
+        };
+        break;
+      case 'month':
+        dateFilterClause = {
+          createdAt: {
+            gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          }
+        };
+        break;
+      case 'year':
+        dateFilterClause = {
+          createdAt: {
+            gte: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+          }
+        };
+        break;
+      default:
+        // 'all' - no date filter
+        break;
+    }
+
+    // Build sort order
+    const orderBy = {};
+    if (sortBy === 'amount') {
+      orderBy.amount = 'desc';
+    } else {
+      orderBy.createdAt = 'desc';
+    }
+
+    // Get daily earnings transactions
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where: {
+          userId,
+          type: 'VIP_EARNINGS',
+          ...dateFilterClause
+        },
+        orderBy,
+        skip,
+        take: limit
+      }),
+      prisma.transaction.count({
+        where: {
+          userId,
+          type: 'VIP_EARNINGS',
+          ...dateFilterClause
+        }
+      })
+    ]);
+
+    // Get summary statistics
+    const [
+      totalEarnings,
+      averageDailyEarnings,
+      maxEarnings,
+      minEarnings,
+      earningsByDay
+    ] = await Promise.all([
+      // Total earnings in the filtered period
+      prisma.transaction.aggregate({
+        where: {
+          userId,
+          type: 'VIP_EARNINGS',
+          ...dateFilterClause
+        },
+        _sum: { amount: true }
+      }),
+      
+      // Average daily earnings
+      prisma.transaction.aggregate({
+        where: {
+          userId,
+          type: 'VIP_EARNINGS',
+          ...dateFilterClause
+        },
+        _avg: { amount: true }
+      }),
+      
+      // Max earnings in a single day
+      prisma.transaction.aggregate({
+        where: {
+          userId,
+          type: 'VIP_EARNINGS',
+          ...dateFilterClause
+        },
+        _max: { amount: true }
+      }),
+      
+      // Min earnings in a single day
+      prisma.transaction.aggregate({
+        where: {
+          userId,
+          type: 'VIP_EARNINGS',
+          ...dateFilterClause
+        },
+        _min: { amount: true }
+      }),
+      
+      // Group earnings by day for chart data
+      prisma.transaction.groupBy({
+        by: ['createdAt'],
+        where: {
+          userId,
+          type: 'VIP_EARNINGS',
+          ...dateFilterClause
+        },
+        _sum: { amount: true },
+        orderBy: { createdAt: 'asc' }
+      })
+    ]);
+
+    // Format earnings by day for chart
+    const chartData = earningsByDay.map(day => ({
+      date: day.createdAt.toISOString().split('T')[0],
+      amount: parseFloat(day._sum.amount || 0)
+    }));
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      transactions,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limit
+      },
+      summary: {
+        totalEarnings: parseFloat(totalEarnings._sum.amount || 0),
+        averageDailyEarnings: parseFloat(averageDailyEarnings._avg.amount || 0),
+        maxEarnings: parseFloat(maxEarnings._max.amount || 0),
+        minEarnings: parseFloat(minEarnings._min.amount || 0),
+        totalDays: total
+      },
+      chartData
+    };
+  } catch (error) {
+    console.error('Error fetching user daily earnings:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   initializeAdminSettings,
   getAdminSettings,
@@ -522,5 +764,6 @@ module.exports = {
   getSystemStats,
   getUserManagementData,
   toggleUserStatus,
-  getReferralTree
+  getReferralTree,
+  getUserDailyEarnings
 };
