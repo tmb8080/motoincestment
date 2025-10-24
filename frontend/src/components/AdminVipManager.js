@@ -23,7 +23,15 @@ const AdminVipManager = () => {
     queryKey: ['adminVipLevels'],
     queryFn: async () => {
       const resp = await adminAPI.getVipLevels();
-      return resp.data.data || resp.data;
+      // Handle different response structures
+      if (Array.isArray(resp.data?.data)) {
+        return resp.data.data;
+      } else if (Array.isArray(resp.data)) {
+        return resp.data;
+      } else if (Array.isArray(resp)) {
+        return resp;
+      }
+      return [];
     },
   });
 
@@ -115,7 +123,7 @@ const AdminVipManager = () => {
           <tbody>
             {isLoading ? (
               <tr><td className="px-4 py-3" colSpan={5}>Loading...</td></tr>
-            ) : (data || []).map((lvl) => (
+            ) : Array.isArray(data) && data.length > 0 ? data.map((lvl) => (
               <tr key={lvl.id} className="border-t border-gray-200 dark:border-gray-700">
                 <td className="px-4 py-2">{lvl.name}</td>
                 <td className="px-4 py-2">{lvl.amount}</td>
@@ -126,7 +134,9 @@ const AdminVipManager = () => {
                   <button className="px-2 py-1 text-sm bg-red-600 text-white rounded" onClick={() => deleteMutation.mutate(lvl.id)}>Delete</button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr><td className="px-4 py-3 text-center text-gray-500" colSpan={5}>No VIP levels found</td></tr>
+            )}
           </tbody>
         </table>
       </div>

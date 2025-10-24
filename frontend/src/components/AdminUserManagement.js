@@ -8,6 +8,8 @@ import AdminUserDepositHistory from './AdminUserDepositHistory';
 import AdminUserWithdrawalHistory from './AdminUserWithdrawalHistory';
 import AdminUserReferralTree from './AdminUserReferralTree';
 import AdminUserDailyEarningsHistory from './AdminUserDailyEarningsHistory';
+import AdminVipAssignmentModal from './AdminVipAssignmentModal';
+import AdminVipUpgradeModal from './AdminVipUpgradeModal';
 
 const AdminUserManagement = () => {
   const queryClient = useQueryClient();
@@ -18,6 +20,8 @@ const AdminUserManagement = () => {
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [showReferralTreeModal, setShowReferralTreeModal] = useState(false);
   const [showDailyEarningsModal, setShowDailyEarningsModal] = useState(false);
+  const [showVipAssignmentModal, setShowVipAssignmentModal] = useState(false);
+  const [showVipUpgradeModal, setShowVipUpgradeModal] = useState(false);
 
   const {
     data: usersData,
@@ -279,7 +283,7 @@ const AdminUserManagement = () => {
                   </div>
                   
                   {/* Enhanced Action Buttons */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3">
                     {/* Suspend/Activate Button */}
                     <Button
                       onClick={() => toggleUserStatusMutation.mutate(user.id)}
@@ -361,6 +365,32 @@ const AdminUserManagement = () => {
                       <span className="text-sm">📈</span>
                       <span className="hidden sm:inline">Earnings</span>
                       <span className="sm:hidden">Earnings</span>
+                    </Button>
+                    
+                    {/* VIP Assignment Button */}
+                    <Button
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setShowVipAssignmentModal(true);
+                      }}
+                      className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white text-xs sm:text-sm font-semibold px-3 py-2.5 rounded-lg shadow-lg hover:shadow-xl shadow-yellow-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 min-h-[40px]"
+                    >
+                      <span className="text-sm">👑</span>
+                      <span className="hidden sm:inline">Assign VIP</span>
+                      <span className="sm:hidden">VIP</span>
+                    </Button>
+                    
+                    {/* VIP Upgrade Button */}
+                    <Button
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setShowVipUpgradeModal(true);
+                      }}
+                      className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white text-xs sm:text-sm font-semibold px-3 py-2.5 rounded-lg shadow-lg hover:shadow-xl shadow-indigo-500/25 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 min-h-[40px]"
+                    >
+                      <span className="text-sm">🔄</span>
+                      <span className="hidden sm:inline">Upgrade VIP</span>
+                      <span className="sm:hidden">Upgrade</span>
                     </Button>
                   </div>
                   
@@ -700,6 +730,23 @@ const AdminUserManagement = () => {
         userName={selectedUser?.fullName || selectedUser?.email || selectedUser?.phone || 'User'}
         isOpen={showDailyEarningsModal}
         onClose={() => setShowDailyEarningsModal(false)}
+      />
+
+      {/* VIP Assignment Modal */}
+      <AdminVipAssignmentModal
+        userId={selectedUser?.id}
+        userName={selectedUser?.fullName || selectedUser?.email || selectedUser?.phone || 'User'}
+        isOpen={showVipAssignmentModal}
+        onClose={() => setShowVipAssignmentModal(false)}
+      />
+
+      {/* VIP Upgrade Modal */}
+      <AdminVipUpgradeModal
+        userId={selectedUser?.id}
+        userName={selectedUser?.fullName || selectedUser?.email || selectedUser?.phone || 'User'}
+        currentVipLevel={selectedUser?.userVip?.vipLevel}
+        isOpen={showVipUpgradeModal}
+        onClose={() => setShowVipUpgradeModal(false)}
       />
     </div>
   );

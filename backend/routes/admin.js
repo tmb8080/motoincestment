@@ -810,6 +810,278 @@ router.get('/users/:userId/daily-earnings', [
   }
 });
 
+// Get user VIP status
+router.get('/users/:userId/vip-status', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const userVip = await prisma.userVip.findFirst({
+      where: { userId },
+      include: {
+        vipLevel: {
+          select: {
+            id: true,
+            name: true,
+            amount: true,
+            dailyEarning: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      data: userVip
+    });
+  } catch (error) {
+    console.error('Error fetching user VIP status:', error);
+    res.status(500).json({
+      error: 'Failed to fetch user VIP status',
+      message: error.message
+    });
+  }
+});
+
+// Assign VIP to user
+router.post('/users/assign-vip', [
+  body('userId').isUUID().withMessage('Valid user ID is required'),
+  body('vipLevelId').isUUID().withMessage('Valid VIP level ID is required'),
+  body('paymentAmount').isFloat({ min: 0 }).withMessage('Payment amount must be a positive number'),
+  body('adminNotes').optional().isString().withMessage('Admin notes must be a string'),
+  body('assignedBy').optional().isString().withMessage('Assigned by must be a string')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { userId, vipLevelId, paymentAmount, adminNotes, assignedBy } = req.body;
+
+    // Verify user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found'
+      });
+    }
+
+    // Verify VIP level exists
+    const vipLevel = await prisma.vipLevel.findUnique({
+      where: { id: vipLevelId }
+    });
+
+    if (!vipLevel) {
+      return res.status(404).json({
+        error: 'VIP level not found'
+      });
+    }
+
+    // Check if user already has a VIP level
+    const existingUserVip = await prisma.userVip.findFirst({
+      where: { userId }
+    });
+
+    if (existingUserVip) {
+      return res.status(400).json({
+        error: 'User already has a VIP level assigned'
+      });
+    }
+
+    // Assign VIP using transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create UserVip record
+      const userVip = await tx.userVip.create({
+        data: {
+          userId,
+          vipLevelId,
+          totalPaid: paymentAmount,
+          isActive: true,
+          joinedAt: new Date()
+        }
+      });
+
+      // Update wallet balance
+      await tx.wallet.update({
+        where: { userId },
+        data: {
+          balance: {
+            increment: paymentAmount
+          },
+          totalDeposits: {
+            increment: paymentAmount
+          }
+        }
+      });
+
+      // Create deposit transaction
+      await tx.transaction.create({
+        data: {
+          userId,
+          type: 'DEPOSIT',
+          amount: paymentAmount,
+          description: `VIP assignment by admin - ${vipLevel.name}`,
+          metadata: {
+            vipLevelId,
+            vipLevelName: vipLevel.name,
+            assignedBy: assignedBy || 'admin',
+            adminNotes: adminNotes || '',
+            source: 'admin_assignment'
+          }
+        }
+      });
+
+      return userVip;
+    });
+
+    res.json({
+      success: true,
+      message: 'VIP level assigned successfully',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error assigning VIP:', error);
+    res.status(500).json({
+      error: 'Failed to assign VIP level',
+      message: error.message
+    });
+  }
+});
+
+// Upgrade/Downgrade VIP for user
+router.post('/users/upgrade-vip', [
+  body('userId').isUUID().withMessage('Valid user ID is required'),
+  body('newVipLevelId').isUUID().withMessage('Valid VIP level ID is required'),
+  body('adminNotes').optional().isString().withMessage('Admin notes must be a string'),
+  body('upgradedBy').optional().isString().withMessage('Upgraded by must be a string'),
+  body('upgradeType').optional().isIn(['upgrade', 'downgrade']).withMessage('Upgrade type must be upgrade or downgrade')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { userId, newVipLevelId, adminNotes, upgradedBy, upgradeType } = req.body;
+
+    // Verify user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { 
+        wallet: true,
+        userVip: {
+          include: {
+            vipLevel: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found'
+      });
+    }
+
+    // Check if user has a VIP level
+    if (!user.userVip) {
+      return res.status(400).json({
+        error: 'User does not have a VIP level to upgrade'
+      });
+    }
+
+    // Verify new VIP level exists
+    const newVipLevel = await prisma.vipLevel.findUnique({
+      where: { id: newVipLevelId }
+    });
+
+    if (!newVipLevel) {
+      return res.status(404).json({
+        error: 'New VIP level not found'
+      });
+    }
+
+    // Check if it's the same VIP level
+    if (user.userVip.vipLevelId === newVipLevelId) {
+      return res.status(400).json({
+        error: 'User already has this VIP level'
+      });
+    }
+
+    const currentVipLevel = user.userVip.vipLevel;
+    const actualUpgradeType = newVipLevel.amount > currentVipLevel.amount ? 'upgrade' : 'downgrade';
+
+    // Calculate balance difference (for admin reference)
+    const balanceDifference = newVipLevel.amount - currentVipLevel.amount;
+    const hasEnoughBalance = user.wallet.balance >= Math.abs(balanceDifference);
+
+    // Upgrade/Downgrade VIP using transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Update UserVip record
+      const updatedUserVip = await tx.userVip.update({
+        where: { id: user.userVip.id },
+        data: {
+          vipLevelId: newVipLevelId,
+          updatedAt: new Date()
+        },
+        include: {
+          vipLevel: true
+        }
+      });
+
+      // Create VIP upgrade transaction record
+      await tx.transaction.create({
+        data: {
+          userId,
+          type: 'ADMIN_ADJUSTMENT',
+          amount: 0, // No automatic balance change
+          description: `VIP ${actualUpgradeType} by admin: ${currentVipLevel.name} → ${newVipLevel.name}`,
+          metadata: {
+            previousVipLevelId: currentVipLevel.id,
+            previousVipLevelName: currentVipLevel.name,
+            newVipLevelId: newVipLevel.id,
+            newVipLevelName: newVipLevel.name,
+            upgradeType: actualUpgradeType,
+            upgradedBy: upgradedBy || 'admin',
+            adminNotes: adminNotes || '',
+            source: 'admin_upgrade',
+            previousAmount: currentVipLevel.amount,
+            newAmount: newVipLevel.amount,
+            amountDifference: balanceDifference,
+            hasEnoughBalance: hasEnoughBalance,
+            currentBalance: user.wallet.balance,
+            requiresManualBalanceAdjustment: !hasEnoughBalance && balanceDifference > 0
+          }
+        }
+      });
+
+      return updatedUserVip;
+    });
+
+    res.json({
+      success: true,
+      message: `VIP level ${actualUpgradeType}d successfully`,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error upgrading VIP:', error);
+    res.status(500).json({
+      error: 'Failed to upgrade VIP level',
+      message: error.message
+    });
+  }
+});
+
 // Get user deposits
 router.get('/users/:userId/deposits', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),

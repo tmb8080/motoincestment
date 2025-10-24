@@ -151,6 +151,9 @@ export const adminAPI = {
   getUserWithdrawals: (userId, params) => api.get(`/admin/users/${userId}/withdrawals`, { params }),
   getReferralTree: (userId, depth = 3) => api.get(`/admin/users/${userId}/referral-tree?depth=${depth}`),
   getUserDailyEarnings: (userId, params) => api.get(`/admin/users/${userId}/daily-earnings`, { params }),
+  getUserVipStatus: (userId) => api.get(`/admin/users/${userId}/vip-status`),
+  assignVipToUser: (data) => api.post('/admin/users/assign-vip', data),
+  upgradeUserVip: (data) => api.post('/admin/users/upgrade-vip', data),
 };
 
 // Company Wallet API
