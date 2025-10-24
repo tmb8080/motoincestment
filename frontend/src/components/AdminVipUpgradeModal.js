@@ -168,8 +168,8 @@ const AdminVipUpgradeModal = ({ userId, userName, currentVipLevel, isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-gray-900 rounded-lg border border-gray-700 w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-1 sm:p-4 overflow-y-auto">
+      <div className="bg-gray-900 rounded-lg border border-gray-700 w-full max-w-4xl max-h-[98vh] sm:max-h-[90vh] overflow-hidden mx-2 sm:mx-0">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 border-b border-gray-700 gap-3">
           <div className="min-w-0 flex-1">
@@ -196,7 +196,7 @@ const AdminVipUpgradeModal = ({ userId, userName, currentVipLevel, isOpen, onClo
         </div>
 
         {/* Content */}
-        <div className="p-3 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-140px)]">
+        <div className="p-3 sm:p-6 overflow-y-auto max-h-[calc(98vh-120px)] sm:max-h-[calc(90vh-140px)]">
           {vipLevelsLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
@@ -225,7 +225,7 @@ const AdminVipUpgradeModal = ({ userId, userName, currentVipLevel, isOpen, onClo
                 <label className="block text-sm font-semibold text-white mb-3">
                   Select New VIP Level
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
                   {Array.isArray(availableLevels) && availableLevels.length > 0 ? availableLevels.map((level) => {
                     const upgradeType = getUpgradeType(level);
                     const isUpgrade = upgradeType === 'upgrade';
@@ -241,15 +241,15 @@ const AdminVipUpgradeModal = ({ userId, userName, currentVipLevel, isOpen, onClo
                         } ${isUpgrade ? 'border-green-500/30' : isDowngrade ? 'border-yellow-500/30' : 'border-white/20'}`}
                         onClick={() => setSelectedVipLevel(level.id)}
                       >
-                        <div className="p-4">
+                        <div className="p-3 sm:p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <h3 className={`font-bold text-lg bg-gradient-to-r ${getVipLevelColor(level)} bg-clip-text text-transparent`}>
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <h3 className={`font-bold text-sm sm:text-lg bg-gradient-to-r ${getVipLevelColor(level)} bg-clip-text text-transparent truncate`}>
                                 {level.name}
                               </h3>
-                              <span className="text-lg">{getUpgradeIcon(level)}</span>
+                              <span className="text-sm sm:text-lg flex-shrink-0">{getUpgradeIcon(level)}</span>
                             </div>
-                            <div className={`w-4 h-4 rounded-full border-2 ${
+                            <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
                               selectedVipLevel === level.id ? 'bg-blue-500 border-blue-500' : 'border-gray-400'
                             }`}>
                               {selectedVipLevel === level.id && (
@@ -259,7 +259,7 @@ const AdminVipUpgradeModal = ({ userId, userName, currentVipLevel, isOpen, onClo
                               )}
                             </div>
                           </div>
-                          <div className="space-y-1 text-sm">
+                          <div className="space-y-1 text-xs sm:text-sm">
                             <div className="flex justify-between">
                               <span className="text-gray-300">Investment:</span>
                               <span className="text-white font-semibold">{formatCurrency(level.amount)}</span>
@@ -326,18 +326,18 @@ const AdminVipUpgradeModal = ({ userId, userName, currentVipLevel, isOpen, onClo
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-700">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t border-gray-700">
                 <Button
                   type="button"
                   onClick={onClose}
-                  className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                  className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   <span>Cancel</span>
                 </Button>
                 <Button
                   type="submit"
                   disabled={isProcessing || !selectedVipLevel}
-                  className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                  className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   {isProcessing ? (
                     <>
