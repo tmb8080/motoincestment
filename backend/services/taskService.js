@@ -11,7 +11,7 @@ function isWeekend() {
 }
 
 /**
- * Start daily earning session (1 hour duration)
+ * Start daily earning session (10 seconds duration)
  */
 async function startEarningSession(userId) {
   try {
@@ -67,7 +67,7 @@ async function startEarningSession(userId) {
 
     // Use full daily earning amount instead of hourly rate
     const dailyEarningAmount = parseFloat(userVip.vipLevel.dailyEarning);
-    const sessionDuration = 60 * 60 * 1000; // 1 hour in milliseconds
+    const sessionDuration = 10 * 1000; // 10 seconds in milliseconds
 
     // Process the entire transaction including wallet deposit
     const result = await prisma.$transaction(async (tx) => {
@@ -79,7 +79,7 @@ async function startEarningSession(userId) {
           startTime: new Date(),
           status: 'ACTIVE',
           dailyEarningRate: dailyEarningAmount, // Store full daily amount
-          expectedEndTime: new Date(Date.now() + sessionDuration), // 1 hour from now
+          expectedEndTime: new Date(Date.now() + sessionDuration), // 10 seconds from now
           totalEarnings: dailyEarningAmount // Set total earnings to full daily amount
         }
       });
@@ -125,7 +125,7 @@ async function startEarningSession(userId) {
       return session;
     });
 
-    // Schedule automatic completion after 1 hour (without depositing again)
+    // Schedule automatic completion after 10 seconds (without depositing again)
     setTimeout(async () => {
       try {
         await completeEarningSession(result.id);
@@ -141,7 +141,7 @@ async function startEarningSession(userId) {
         startTime: result.startTime,
         expectedEndTime: result.expectedEndTime,
         dailyEarningRate: result.dailyEarningRate,
-        message: `Daily earning session started! You have earned $${dailyEarningAmount} (${userVip.vipLevel.name} VIP level: $${userVip.vipLevel.dailyEarning}/day) which has been deposited to your wallet. Your task will complete automatically in 1 hour.`
+        message: `Daily earning session started! You have earned $${dailyEarningAmount} (${userVip.vipLevel.name} VIP level: $${userVip.vipLevel.dailyEarning}/day) which has been deposited to your wallet. Your task will complete automatically in 10 seconds.`
       }
     };
   } catch (error) {
@@ -284,7 +284,7 @@ async function getEarningSessionStatus(userId) {
       data: {
         hasActiveSession: false,
         canStart: true,
-        message: 'Ready to start daily task! Click "Start Daily Task" to begin your 1-hour earning session based on your VIP level.'
+        message: 'Ready to start daily task! Click "Start Daily Task" to begin your 10-second earning session based on your VIP level.'
       }
     };
   } catch (error) {

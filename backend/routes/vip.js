@@ -204,7 +204,7 @@ router.post('/join', authenticateToken, async (req, res) => {
     const totalDeposits = parseFloat(wallet?.totalDeposits || 0);
     const totalBalance = parseFloat(wallet?.balance || 0);
 
-    console.log('Wallet check for VIP upgrade:', { 
+    console.log('Initial wallet check for VIP purchase:', { 
       wallet: wallet ? 'exists' : 'not found', 
       totalDeposits, 
       totalBalance,
@@ -277,10 +277,23 @@ router.post('/join', authenticateToken, async (req, res) => {
     const finalTotalDeposits = parseFloat(wallet.totalDeposits || 0);
     const finalTotalBalance = parseFloat(wallet.balance || 0);
     
+    console.log('VIP purchase validation:', {
+      isUpgrade,
+      paymentAmount,
+      finalTotalDeposits,
+      finalTotalBalance,
+      canPurchaseWithDeposits: finalTotalDeposits >= paymentAmount,
+      hasSufficientBalance: finalTotalBalance >= paymentAmount,
+      vipLevelName: vipLevel.name,
+      currentVipName: currentVipLevel?.name || 'none'
+    });
+    
+    // Check if user has sufficient total deposits to purchase VIP
+    // VIP can only be purchased using deposited funds, not earnings or referral bonuses
     if (finalTotalDeposits < paymentAmount) {
       const message = isUpgrade 
-        ? `Insufficient deposited balance for upgrade. You have $${finalTotalDeposits} in deposits but need $${paymentAmount} to upgrade from ${currentVipLevel.name} to ${vipLevel.name}. Daily earnings and referral bonuses cannot be used for VIP upgrades.`
-        : `Insufficient deposited balance. You have $${finalTotalDeposits} in deposits but need $${paymentAmount} to join this VIP level. Daily earnings and referral bonuses cannot be used for VIP upgrades.`;
+        ? `Insufficient deposited balance for upgrade. You have $${finalTotalDeposits} in total deposits but need $${paymentAmount} to upgrade from ${currentVipLevel.name} to ${vipLevel.name}. Daily earnings and referral bonuses cannot be used for VIP upgrades.`
+        : `Insufficient deposited balance. You have $${finalTotalDeposits} in total deposits but need $${paymentAmount} to join this VIP level. Daily earnings and referral bonuses cannot be used for VIP upgrades.`;
       
       return res.status(400).json({
         success: false,
@@ -290,6 +303,26 @@ router.post('/join', authenticateToken, async (req, res) => {
           totalBalance: finalTotalBalance,
           requiredAmount: paymentAmount,
           canUseDeposits: finalTotalDeposits >= paymentAmount
+        }
+      });
+    }
+    
+    // Also check if user has sufficient balance to make the payment
+    // Balance should be >= paymentAmount to complete the transaction
+    if (finalTotalBalance < paymentAmount) {
+      const message = isUpgrade
+        ? `Insufficient balance for upgrade. You have $${finalTotalBalance} available but need $${paymentAmount} to upgrade from ${currentVipLevel.name} to ${vipLevel.name}. Please ensure you have sufficient balance from your deposits.`
+        : `Insufficient balance. You have $${finalTotalBalance} available but need $${paymentAmount} to join this VIP level. Please ensure you have sufficient balance from your deposits.`;
+      
+      return res.status(400).json({
+        success: false,
+        message,
+        details: {
+          availableDeposits: finalTotalDeposits,
+          totalBalance: finalTotalBalance,
+          requiredAmount: paymentAmount,
+          canUseDeposits: finalTotalDeposits >= paymentAmount,
+          hasSufficientBalance: finalTotalBalance >= paymentAmount
         }
       });
     }

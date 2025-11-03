@@ -249,7 +249,7 @@ async function seedTasks() {
 
   const dailyEarningTask = {
     title: 'Daily Earning Session',
-    description: 'Start your daily 1-hour earning session to earn based on your VIP level daily earning rate',
+    description: 'Start your daily 10-second earning session to earn based on your VIP level daily earning rate',
     type: 'DAILY_EARNING',
     reward: 0, // Reward is based on VIP level, not fixed amount
     requirements: {
