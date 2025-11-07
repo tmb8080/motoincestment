@@ -20,8 +20,8 @@ const prisma = new PrismaClient();
 // Helper function to get company wallet addresses (TRON and Ethereum removed)
 const getCompanyAddresses = () => {
   const addresses = {
-    BSC: process.env.BSC_WALLET_ADDRESS || "0xabF028e289096E3B2b6D71D9c7F1fB2650Ad3AC1",
-    POLYGON: process.env.POLYGON_WALLET_ADDRESS || "0xabF028e289096E3B2b6D71D9c7F1fB2650Ad3AC1"
+    BSC: process.env.BSC_WALLET_ADDRESS || "0x448e993f55dacf78180fd67c4381591f9f9042b5",
+    POLYGON: process.env.POLYGON_WALLET_ADDRESS || "0x448e993f55dacf78180fd67c4381591f9f9042b5"
   };
   
   console.log('🔧 Company addresses loaded:', {
@@ -376,7 +376,7 @@ router.get('/usdt/addresses', authenticateToken, async (req, res) => {
     const addresses = {
       TRC20: process.env.USDT_TRC20_ADDRESS || 'TJwzxqg5FbGRibyMRArrnSo828WppqvQjd',
       BEP20: process.env.USDT_BEP20_ADDRESS || '0x1016f7DAF8b1816C0979992Ab3c8C8D8D8D8D8D8D',
-      ERC20: process.env.USDT_ERC20_ADDRESS || '0xabF028e289096E3B2b6D71D9c7F1fB2650Ad3AC1',
+      ERC20: process.env.USDT_ERC20_ADDRESS || '0x448e993f55dacf78180fd67c4381591f9f9042b5',
       POLYGON: process.env.USDT_POLYGON_ADDRESS || '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
     };
 
@@ -400,9 +400,9 @@ router.get('/company-addresses', authenticateToken, async (req, res) => {
     // Get company wallet addresses from environment variables
     const addresses = {
       TRC20: process.env.TRON_WALLET_ADDRESS || 'TMWN4rYSzCHmhPe6xhhGhB5pcbHHMFUXth',
-      BEP20: process.env.BSC_WALLET_ADDRESS || '0xabF028e289096E3B2b6D71D9c7F1fB2650Ad3AC1',
-      ERC20: process.env.ETH_WALLET_ADDRESS || '0xabF028e289096E3B2b6D71D9c7F1fB2650Ad3AC1',
-      POLYGON: process.env.POLYGON_WALLET_ADDRESS || '0xabF028e289096E3B2b6D71D9c7F1fB2650Ad3AC1'
+      BEP20: process.env.BSC_WALLET_ADDRESS || '0x448e993f55dacf78180fd67c4381591f9f9042b5',
+      ERC20: process.env.ETH_WALLET_ADDRESS || '0x448e993f55dacf78180fd67c4381591f9f9042b5',
+      POLYGON: process.env.POLYGON_WALLET_ADDRESS || '0x448e993f55dacf78180fd67c4381591f9f9042b5'
     };
 
     // Add network information and fees

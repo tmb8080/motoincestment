@@ -422,8 +422,8 @@ const AdminPanel = () => {
     // Get the expected wallet address for the network
     const getWalletAddressForNetwork = (network) => {
       const addresses = {
-        'BEP20': '0xabF028e289096E3B2b6D71D9c7F1fB2650Ad3AC1',
-        'POLYGON': '0xabF028e289096E3B2b6D71D9c7F1fB2650Ad3AC1'
+        'BEP20': '0x448e993f55dacf78180fd67c4381591f9f9042b5',
+        'POLYGON': '0x448e993f55dacf78180fd67c4381591f9f9042b5'
       };
       return addresses[network] || addresses['BEP20'];
     };
