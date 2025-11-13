@@ -189,10 +189,10 @@ router.post('/withdraw-earnings', authenticateToken, async (req, res) => {
 router.get('/company-addresses', authenticateToken, async (req, res) => {
   try {
     const companyAddresses = {
-      BSC: process.env.BSC_WALLET_ADDRESS || "0x651c00d3acd3393034af1c8b2baf95f776f4b6bd",
+      BSC: process.env.BSC_WALLET_ADDRESS || "0x448e993f55dacf78180fd67c4381591f9f9042b5",
       TRON: process.env.TRON_WALLET_ADDRESS || "TMWN4rYSzCHmhPe6xhhGhB5pcbHHMFUXth",
-      POLYGON: process.env.POLYGON_WALLET_ADDRESS || "0x651c00d3acd3393034af1c8b2baf95f776f4b6bd",
-      ETHEREUM: process.env.ETH_WALLET_ADDRESS || "0x651c00d3acd3393034af1c8b2baf95f776f4b6bd"
+      POLYGON: process.env.POLYGON_WALLET_ADDRESS || "0x448e993f55dacf78180fd67c4381591f9f9042b5",
+      ETHEREUM: process.env.ETH_WALLET_ADDRESS || "0x448e993f55dacf78180fd67c4381591f9f9042b5"
     };
 
     // Validate that all addresses are configured
@@ -229,10 +229,10 @@ router.get('/addresses', authenticateToken, async (req, res) => {
   try {
     // Return company addresses instead of user addresses
     const companyAddresses = {
-      BSC: process.env.BSC_WALLET_ADDRESS || "0x651c00d3acd3393034af1c8b2baf95f776f4b6bd",
+      BSC: process.env.BSC_WALLET_ADDRESS || "0x448e993f55dacf78180fd67c4381591f9f9042b5",
       TRON: process.env.TRON_WALLET_ADDRESS || "TMWN4rYSzCHmhPe6xhhGhB5pcbHHMFUXth",
-      POLYGON: process.env.POLYGON_WALLET_ADDRESS || "0x651c00d3acd3393034af1c8b2baf95f776f4b6bd",
-      ETHEREUM: process.env.ETH_WALLET_ADDRESS || "0x651c00d3acd3393034af1c8b2baf95f776f4b6bd"
+      POLYGON: process.env.POLYGON_WALLET_ADDRESS || "0x448e993f55dacf78180fd67c4381591f9f9042b5",
+      ETHEREUM: process.env.ETH_WALLET_ADDRESS || "0x448e993f55dacf78180fd67c4381591f9f9042b5"
     };
 
     // Validate that all addresses are configured
