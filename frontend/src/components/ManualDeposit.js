@@ -24,8 +24,8 @@ const ManualDeposit = ({ onClose, onSuccess }) => {
 
   // Fallback addresses if API fails (TRON and Ethereum removed)
   const fallbackAddresses = {
-    BEP20: { address: '0x448e993f55dacf78180fd67c4381591f9f9042b5', name: 'BEP20-USDT', fee: 0.5, minAmount: 0.000001, supportedTokens: ['USDT', 'USDC'] },
-    POLYGON: { address: '0x448e993f55dacf78180fd67c4381591f9f9042b5', name: 'POL-USDT', fee: 0.1, minAmount: 0.000001, supportedTokens: ['USDT', 'USDC'] }
+    BEP20: { address: '0x651c00d3acd3393034af1c8b2baf95f776f4b6bd', name: 'BEP20-USDT', fee: 0.5, minAmount: 0.000001, supportedTokens: ['USDT', 'USDC'] },
+    POLYGON: { address: '0x651c00d3acd3393034af1c8b2baf95f776f4b6bd', name: 'POL-USDT', fee: 0.1, minAmount: 0.000001, supportedTokens: ['USDT', 'USDC'] }
   };
 
   // Use API data or fallback

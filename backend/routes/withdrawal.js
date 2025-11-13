@@ -155,6 +155,27 @@ router.post('/request', [
       });
     }
 
+    // Enforce maximum one withdrawal request per day
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const withdrawalToday = await prisma.withdrawal.findFirst({
+      where: {
+        userId,
+        createdAt: {
+          gte: startOfToday
+        }
+      }
+    });
+
+    if (withdrawalToday) {
+      return res.status(400).json({
+        error: 'Daily withdrawal limit reached',
+        message: 'You can only submit one withdrawal request per day.'
+      });
+    }
+
     // Check for pending withdrawals
     const pendingWithdrawal = await prisma.withdrawal.findFirst({
       where: {
