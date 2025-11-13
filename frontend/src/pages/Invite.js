@@ -1,16 +1,13 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { referralAPI } from '../services/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import InvitedFriendsList from '../components/InvitedFriendsList';
 import ReferralBenefits from '../components/ReferralBenefits';
 import toast from 'react-hot-toast';
 
 const Invite = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   // Fetch referral statistics including invited friends
   const { data: referralStats, isLoading: referralLoading } = useQuery({

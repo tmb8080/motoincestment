@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
-import { walletAPI, referralAPI, vipAPI, taskAPI } from '../services/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { walletAPI, vipAPI, taskAPI } from '../services/api';
 import { Button } from '../components/ui/Button';
 import VipDashboard from '../components/VipDashboard';
 import VipUpgradeProgress from '../components/VipUpgradeProgress';
@@ -11,24 +10,12 @@ import UsdtDeposit from '../components/UsdtDeposit';
 import MemberList from '../components/MemberList';
 import WelcomeModal from '../components/ui/WelcomeModal';
 import WelcomeBanner from '../components/ui/WelcomeBanner';
-import CountdownTimer from '../components/ui/CountdownTimer';
 import { toast } from 'react-hot-toast';
 import { calculateNextVipUpgrade } from '../utils/vipCalculations';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip
-} from 'recharts';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('home');
-  const [timeRange, setTimeRange] = useState('30d');
   const [showUsdtDeposit, setShowUsdtDeposit] = useState(false);
   const [vipToJoin, setVipToJoin] = useState(null);
   const [previousBalance, setPreviousBalance] = useState(null);
@@ -38,26 +25,11 @@ const Dashboard = () => {
   const [videoSrc, setVideoSrc] = useState('/intornova.mov');
 
   // Fetch wallet stats
-  const { data: walletStats, isLoading: walletLoading } = useQuery({
+  const { data: walletStats } = useQuery({
     queryKey: ['walletStats'],
     queryFn: () => walletAPI.getStats(),
     refetchInterval: 10000, // Auto-refresh every 10 seconds
     refetchIntervalInBackground: true,
-  });
-
-  // Fetch referral stats
-  const { data: referralStats, isLoading: referralLoading } = useQuery({
-    queryKey: ['referralStats'],
-    queryFn: () => referralAPI.getStats(),
-  });
-
-
-
-  // Fetch projected earnings data for chart
-  const { data: projectedEarnings } = useQuery({
-    queryKey: ['projectedEarnings', timeRange],
-    queryFn: () => walletAPI.getProjectedEarnings({ timeRange }),
-    enabled: !!timeRange
   });
 
   // Fetch VIP levels
@@ -67,7 +39,7 @@ const Dashboard = () => {
   });
 
   // Fetch user VIP status
-  const { data: userVipStatus, error: vipStatusError } = useQuery({
+  const { data: userVipStatus } = useQuery({
     queryKey: ['userVipStatus'],
     queryFn: () => vipAPI.getStatus(),
   });
@@ -243,22 +215,6 @@ const Dashboard = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const getVipLevelColor = (index) => {
-    const colors = [
-      'bg-gray-500',      // Starter
-      'bg-amber-600',     // Bronze
-      'bg-gray-400',      // Silver
-      'bg-yellow-500',    // Gold
-      'bg-gray-700',      // Platinum
-      'bg-blue-500',      // Diamond
-      'bg-purple-600',    // Elite
-      'bg-red-600',       // Master
-      'bg-indigo-700',    // Legend
-      'bg-black'          // Supreme
-    ];
-    return colors[index] || 'bg-emerald-500';
   };
 
   const getVipLevelGradient = (index) => {

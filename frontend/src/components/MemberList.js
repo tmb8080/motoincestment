@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { membersAPI } from '../services/api';
-import { useTheme } from '../contexts/ThemeContext';
 
 const MemberList = () => {
-  const { isDarkMode } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sortBy, setSortBy] = useState('earnings');
   const [showStats, setShowStats] = useState(false);
@@ -23,7 +21,7 @@ const MemberList = () => {
   });
 
   // Fetch member statistics
-  const { data: statsData, isLoading: statsLoading } = useQuery({
+  const { data: statsData } = useQuery({
     queryKey: ['memberStats'],
     queryFn: () => membersAPI.getStats(),
     refetchInterval: 60000, // Refresh every minute

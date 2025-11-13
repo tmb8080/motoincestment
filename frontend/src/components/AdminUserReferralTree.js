@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { adminAPI } from '../services/api';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
-import { toast } from 'react-hot-toast';
 
 const AdminUserReferralTree = ({ userId, userName, isOpen, onClose }) => {
   const [depth, setDepth] = useState(3);

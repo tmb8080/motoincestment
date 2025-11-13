@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { depositAPI, walletAPI } from '../services/api';
@@ -14,7 +14,6 @@ const Deposit = () => {
   const queryClient = useQueryClient();
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [selectedCurrency, setSelectedCurrency] = useState('USDT');
-  const [selectedNetwork, setSelectedNetwork] = useState('BEP20');
   const [depositMethod, setDepositMethod] = useState('direct'); // 'direct' or 'coinbase'
   const [showInstructions, setShowInstructions] = useState(false);
   const [pendingDeposit, setPendingDeposit] = useState(null);
@@ -58,7 +57,7 @@ const Deposit = () => {
   });
 
   // Fetch USDT addresses (fallback)
-  const { data: usdtAddresses, isLoading: fallbackLoading } = useQuery({
+  const { data: usdtAddresses } = useQuery({
     queryKey: ['usdt-addresses'],
     queryFn: depositAPI.getUsdtAddresses,
     enabled: depositMethod === 'direct' && (!companyAddresses?.data || Object.keys(companyAddresses.data).length === 0)
@@ -124,24 +123,6 @@ const Deposit = () => {
     },
   });
 
-  // Get transaction details mutation
-  const getTransactionDetailsMutation = useMutation({
-    mutationFn: depositAPI.getTransactionDetails,
-    onSuccess: (data) => {
-      const details = data.data;
-      console.log('Transaction details:', details);
-      
-      if (details.found) {
-        toast.success(`✅ Transaction found on ${details.foundOnNetwork}! Check console for details.`);
-      } else {
-        toast.error('❌ Transaction not found on any network');
-      }
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to get transaction details');
-    },
-  });
-
   // Auto-fill transaction details mutation
   const autoFillTransactionMutation = useMutation({
     mutationFn: (data) => {
@@ -165,7 +146,6 @@ const Deposit = () => {
         
         if (transactionData.suggestedNetwork) {
           setValue('network', transactionData.suggestedNetwork);
-          setSelectedNetwork(transactionData.suggestedNetwork);
         }
         
         // Set auto-fill status
@@ -235,7 +215,6 @@ const Deposit = () => {
     
     if (transactionData.network) {
       setValue('network', transactionData.network);
-      setSelectedNetwork(transactionData.network);
     }
     
     if (transactionData.transactionHash) {
@@ -412,7 +391,6 @@ const Deposit = () => {
   };
 
   const handleNetworkChange = (network) => {
-    setSelectedNetwork(network);
     setValue('network', network);
   };
 
@@ -421,22 +399,6 @@ const Deposit = () => {
     setSelectedCurrency(currency);
     setValue('currency', currency);
     setDepositMethod(currencyData.method);
-  };
-
-  const handleVerifyDeposit = async (depositId) => {
-    if (!watchedTransactionHash) {
-      toast.error('Please provide transaction hash first');
-      return;
-    }
-
-    // First update transaction hash
-    await updateTransactionHashMutation.mutateAsync({
-      depositId,
-      transactionHash: watchedTransactionHash
-    });
-
-    // Then verify the deposit
-    verifyDepositMutation.mutate(depositId);
   };
 
   const formatCurrency = (amount, currency) => {

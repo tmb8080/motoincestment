@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -108,6 +108,26 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  const loadUser = useCallback(async () => {
+    try {
+      dispatch({ type: AUTH_ACTIONS.LOAD_USER_START });
+      
+      const response = await authAPI.getProfile();
+      const { user } = response.data;
+
+      dispatch({
+        type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
+        payload: user
+      });
+
+    } catch (error) {
+      dispatch({
+        type: AUTH_ACTIONS.LOAD_USER_FAILURE,
+        payload: error.response?.data?.message || 'Failed to load user'
+      });
+    }
+  }, [dispatch]);
+
   // Configure axios defaults
   useEffect(() => {
     if (state.token) {
@@ -121,10 +141,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (state.token && !state.user) {
       loadUser();
-    } else {
+    } else if (!state.token) {
       dispatch({ type: AUTH_ACTIONS.LOAD_USER_FAILURE, payload: null });
     }
-  }, []);
+  }, [state.token, state.user, loadUser, dispatch]);
 
   // Login function
   const login = async (credentials) => {
@@ -225,27 +245,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Load user function
-  const loadUser = async () => {
-    try {
-      dispatch({ type: AUTH_ACTIONS.LOAD_USER_START });
-      
-      const response = await authAPI.getProfile();
-      const { user } = response.data;
-
-      dispatch({
-        type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
-        payload: user
-      });
-
-    } catch (error) {
-      dispatch({
-        type: AUTH_ACTIONS.LOAD_USER_FAILURE,
-        payload: error.response?.data?.message || 'Failed to load user'
-      });
-    }
-  };
-
   // Logout function
   const logout = async () => {
     try {
@@ -261,7 +260,7 @@ export const AuthProvider = ({ children }) => {
   // Verify email function
   const verifyEmail = async (otp) => {
     try {
-      const response = await authAPI.verifyEmail(otp);
+      await authAPI.verifyEmail(otp);
       
       // Update user state
       dispatch({

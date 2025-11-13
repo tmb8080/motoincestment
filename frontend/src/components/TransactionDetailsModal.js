@@ -7,7 +7,6 @@ const TransactionDetailsModal = ({ isOpen, onClose, transactionData, onConfirm }
   const {
     found,
     foundOnNetwork,
-    suggestedNetwork,
     suggestedAmount,
     recipientAddress,
     senderAddress,

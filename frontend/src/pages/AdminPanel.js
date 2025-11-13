@@ -4,13 +4,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { adminAPI, walletAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
-import WithdrawalHistory from '../components/WithdrawalHistory';
 import AdminWithdrawalHistory from '../components/AdminWithdrawalHistory';
 import AdminUserManagement from '../components/AdminUserManagement';
 import MobileBottomNav from '../components/MobileBottomNav';
 import DesktopNav from '../components/layout/DesktopNav';
 import toast from 'react-hot-toast';
-import Card from '../components/ui/Card';
 import AdminVipManager from '../components/AdminVipManager';
 import AdminVipMembersList from '../components/AdminVipMembersList';
 
@@ -167,7 +165,7 @@ const AdminPanel = () => {
   }, [settings]);
 
   // Fetch company wallet addresses
-  const { data: addressesData, isLoading: addressesLoading } = useQuery({
+  useQuery({
     queryKey: ['companyAddresses'],
     queryFn: async () => {
       const response = await walletAPI.getCompanyWalletAddresses();
@@ -194,18 +192,6 @@ const AdminPanel = () => {
     },
     enabled: !!user?.isAdmin, // Only run if user is admin
     refetchInterval: 10000, // Auto-refresh every 10 seconds for deposits
-    refetchIntervalInBackground: true,
-  });
-
-  const { data: pendingDeposits, isLoading: pendingDepositsLoading } = useQuery({
-    queryKey: ['pendingDeposits'],
-    queryFn: async () => {
-      const response = await adminAPI.getPendingDeposits();
-      console.log('Pending deposits response:', response);
-      return response.data.data; // Return the nested data from the API response
-    },
-    enabled: !!user?.isAdmin, // Only run if user is admin
-    refetchInterval: 5000, // Auto-refresh every 5 seconds for pending deposits
     refetchIntervalInBackground: true,
   });
 
@@ -416,37 +402,6 @@ const AdminPanel = () => {
       action,
       data
     });
-  };
-
-  const handleVerifyTransaction = (deposit) => {
-    // Get the expected wallet address for the network
-    const getWalletAddressForNetwork = (network) => {
-      const addresses = {
-        'BEP20': '0x651c00d3acd3393034af1c8b2baf95f776f4b6bd',
-        'POLYGON': '0x651c00d3acd3393034af1c8b2baf95f776f4b6bd'
-      };
-      return addresses[network] || addresses['BEP20'];
-    };
-
-    const verificationData = {
-      transactionHash: deposit.transactionHash,
-      network: deposit.network, // Use the network directly from deposit
-      amount: deposit.amount,
-      walletAddress: getWalletAddressForNetwork(deposit.network)
-    };
-
-    console.log('🔍 Verifying transaction:', verificationData);
-    verifyTransactionMutation.mutate(verificationData);
-  };
-
-  const handleCheckBlockchain = (deposit) => {
-    const blockchainData = {
-      transactionHash: deposit.transactionHash,
-      network: deposit.network
-    };
-
-    console.log('🔍 Checking transaction on blockchain:', blockchainData);
-    checkBlockchainMutation.mutate(blockchainData);
   };
 
   const handleCheckAllNetworks = (deposit) => {

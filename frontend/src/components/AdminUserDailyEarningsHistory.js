@@ -86,7 +86,6 @@ const AdminUserDailyEarningsHistory = ({ userId, userName, isOpen, onClose }) =>
     const minAmount = Math.min(...data.map(d => d.amount));
     const range = maxAmount - minAmount || 1;
     const chartHeight = 120;
-    const barWidth = Math.max(20, (100 / Math.min(data.length, 14)) - 2);
 
     return (
       <div className="space-y-4">

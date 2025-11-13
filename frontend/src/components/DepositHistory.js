@@ -34,7 +34,7 @@ const DepositHistory = ({ onClose }) => {
   });
 
   // Fetch pending count
-  const { data: pendingCountData, error: pendingError } = useQuery({
+  const { data: pendingCountData } = useQuery({
     queryKey: ['pendingDepositsCount'],
     queryFn: async () => {
       const response = await depositAPI.getPendingCount();

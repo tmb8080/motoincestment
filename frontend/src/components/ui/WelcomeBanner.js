@@ -28,17 +28,6 @@ const WelcomeBanner = () => {
 
   if (!showBanner || !user) return null;
 
-  const currentTime = new Date().getHours();
-  let greeting = 'Welcome back';
-  
-  if (currentTime < 12) {
-    greeting = 'Good morning';
-  } else if (currentTime < 18) {
-    greeting = 'Good afternoon';
-  } else {
-    greeting = 'Good evening';
-  }
-
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-300 ${
       isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'

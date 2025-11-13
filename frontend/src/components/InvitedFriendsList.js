@@ -4,7 +4,7 @@ import { publicAPI } from '../services/api';
 
 const InvitedFriendsList = ({ referralStats }) => {
   // Fetch referral rates dynamically
-  const { data: referralRatesData, isLoading: ratesLoading } = useQuery({
+  const { data: referralRatesData } = useQuery({
     queryKey: ['publicReferralRates'],
     queryFn: publicAPI.getReferralRates,
     staleTime: 5 * 60 * 1000, // 5 minutes

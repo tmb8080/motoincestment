@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/Card';
-import { Button } from './ui/Button';
-import { calculateNextVipUpgrade, formatCurrency, getVipColor } from '../utils/vipCalculations';
+import { calculateNextVipUpgrade, formatCurrency } from '../utils/vipCalculations';
 
 const VipUpgradeProgress = ({ vipLevels, currentVip, totalDeposits, onUpgradeClick, showUpgradeButton = true }) => {
   const upgradeInfo = calculateNextVipUpgrade(vipLevels, currentVip, totalDeposits);

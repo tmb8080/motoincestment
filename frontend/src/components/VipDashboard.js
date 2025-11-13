@@ -169,7 +169,7 @@ const VipDashboard = () => {
     );
   }
 
-  const { userVip, activeSession, todayEarnings } = vipData;
+  const { userVip, activeSession } = vipData;
   const canStartEarning = !activeSession && vipData.canStartEarning;
 
   return (

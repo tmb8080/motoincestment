@@ -26,8 +26,7 @@ const AdminVipAssignmentModal = ({ userId, userName, isOpen, onClose }) => {
 
   // Fetch current user VIP status
   const {
-    data: userVipData,
-    isLoading: userVipLoading
+    data: userVipData
   } = useQuery({
     queryKey: ['userVipStatus', userId],
     queryFn: () => adminAPI.getUserVipStatus(userId),
